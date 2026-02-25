@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>밸런스 게임</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --bg2:      #161b22;
+      --bg3:      #21262d;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --a:        #3b82f6;
+      --a-hover:  #2563eb;
+      --a-dim:    #1e3a5f;
+      --b:        #f97316;
+      --b-hover:  #ea6c10;
+      --b-dim:    #5c2a0a;
+      --green:    #22c55e;
+      --radius:   16px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', -apple-system, 'Malgun Gothic', sans-serif;
+      overflow: hidden;
+    }
+
+    #app {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ════════════════════════════════════════════════════════════
+       LOBBY SCREEN
+    ════════════════════════════════════════════════════════════ */
+    #screen-lobby {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .lobby-icon {
+      font-size: 5rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%       { transform: scale(1.1); opacity: .8; }
+    }
+
+    .lobby-title { font-size: 2.2rem; font-weight: 800; }
+    .lobby-sub   { font-size: 1.1rem; color: var(--muted); }
+
+    .waiting-dots::after {
+      content: '';
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       QUESTION SCREEN
+    ════════════════════════════════════════════════════════════ */
+    #screen-question {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .q-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: .7rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+    }
+    .q-progress {
+      font-size: .9rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .progress-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      display: inline-block;
+      transition: background .3s;
+    }
+    .progress-dot.active { background: var(--a); }
+    .progress-dot.done   { background: var(--green); }
+
+    .q-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Question text banner */
+    .q-text-area {
+      padding: 1.2rem 1.4rem;
+      background: var(--bg2);
+      border-bottom: 2px solid var(--border);
+      text-align: center;
+    }
+    .q-text {
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
+      font-weight: 700;
+      line-height: 1.4;
+      word-break: keep-all;
+    }
+
+    /* Vote buttons area */
+    .vote-area {
+      flex: 1;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 0;
+    }
+
+    .vote-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: filter .15s, transform .12s;
+      position: relative;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .vote-btn:active:not(:disabled) {
+      transform: scale(.97);
+    }
+
+    .vote-btn.btn-a {
+      background: var(--a);
+      border-bottom: 2px solid var(--border);
+    }
+    .vote-btn.btn-b {
+      background: var(--b);
+    }
+
+    .vote-btn:hover:not(:disabled).btn-a { filter: brightness(1.1); }
+    .vote-btn:hover:not(:disabled).btn-b { filter: brightness(1.1); }
+
+    .vote-badge {
+      font-size: clamp(2.5rem, 12vw, 4.5rem);
+      font-weight: 900;
+      color: rgba(255,255,255,.3);
+      line-height: 1;
+    }
+    .vote-opt-text {
+      font-size: clamp(1.3rem, 5vw, 2.2rem);
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      padding: 0 1.5rem;
+      word-break: keep-all;
+      line-height: 1.3;
+    }
+
+    /* ── Already voted state ─────────────────────────────────── */
+    .result-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem 1.2rem;
+      gap: .9rem;
+      overflow-y: auto;
+    }
+
+    .voted-notice {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .8rem 1rem;
+      text-align: center;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+    .voted-notice strong { color: var(--text); }
+
+    .result-row {
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .r-badge {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .r-badge.a { background: var(--a-dim); color: var(--a); }
+    .r-badge.b { background: var(--b-dim); color: var(--b); }
+    .r-text {
+      flex: 1;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .r-pct {
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+    .r-pct.a { color: var(--a); }
+    .r-pct.b { color: var(--b); }
+
+    .r-bar-track {
+      height: 16px;
+      background: var(--bg3);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .r-bar-fill {
+      height: 100%;
+      border-radius: 8px;
+      transition: width .5s cubic-bezier(.4,0,.2,1);
+    }
+    .r-bar-fill.a { background: var(--a); }
+    .r-bar-fill.b { background: var(--b); }
+
+    /* Chosen indicator */
+    .chosen-mark {
+      display: inline-block;
+      background: var(--green);
+      color: #fff;
+      font-size: .7rem;
+      font-weight: 700;
+      padding: .15rem .5rem;
+      border-radius: 20px;
+      margin-left: .5rem;
+      vertical-align: middle;
+    }
+
+    .r-total { font-size: .8rem; color: var(--muted); text-align: center; }
+
+    /* Waiting for next */
+    .waiting-next {
+      text-align: center;
+      font-size: .85rem;
+      color: var(--muted);
+      padding: .5rem;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .4; }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       SUMMARY SCREEN
+    ════════════════════════════════════════════════════════════ */
+    #screen-summary {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .summary-header-p {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.2rem;
+      text-align: center;
+    }
+    .summary-header-p h2 { font-size: 1.4rem; font-weight: 800; }
+
+    .summary-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .9rem;
+    }
+
+    .summary-card-p {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+    }
+    .sc-num { font-size: .75rem; color: var(--muted); margin-bottom: .3rem; }
+    .sc-text { font-size: .95rem; font-weight: 700; margin-bottom: .8rem; word-break: keep-all; }
+    .sc-row { display: flex; align-items: center; gap: .6rem; margin-bottom: .4rem; }
+    .sc-badge {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; flex-shrink: 0;
+    }
+    .sc-badge.a { background: var(--a-dim); color: var(--a); }
+    .sc-badge.b { background: var(--b-dim); color: var(--b); }
+    .sc-label { flex: 1; font-size: .85rem; }
+    .sc-track { flex: 2; height: 20px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
+    .sc-fill { height: 100%; border-radius: 5px; transition: width .5s ease; }
+    .sc-fill.a { background: var(--a); }
+    .sc-fill.b { background: var(--b); }
+    .sc-pct { font-size: .9rem; font-weight: 700; min-width: 36px; text-align: right; }
+    .sc-pct.a { color: var(--a); }
+    .sc-pct.b { color: var(--b); }
+    .sc-total { font-size: .75rem; color: var(--muted); margin-top: .4rem; }
+    .sc-my {
+      display: inline-block;
+      font-size: .7rem; font-weight: 700;
+      background: var(--green); color: #fff;
+      padding: .1rem .4rem; border-radius: 20px;
+      margin-left: .3rem; vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════════════════════════════════════════
+       LOBBY
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-lobby">
+    <div class="lobby-icon">⚖️</div>
+    <div class="lobby-title">밸런스 게임</div>
+    <div class="lobby-sub">진행자가 게임을 시작할 때까지 기다려주세요<span class="waiting-dots"></span></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       QUESTION
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-question" class="hidden">
+    <div class="q-header">
+      <span class="q-progress" id="q-progress-text">질문 1 / 5</span>
+      <div id="progress-dots"></div>
+    </div>
+
+    <div class="q-body">
+      <!-- Question text -->
+      <div class="q-text-area">
+        <div class="q-text" id="q-text"></div>
+      </div>
+
+      <!-- Vote buttons (shown when not voted) -->
+      <div class="vote-area" id="vote-area">
+        <button class="vote-btn btn-a" id="btn-vote-a">
+          <span class="vote-badge">A</span>
+          <span class="vote-opt-text" id="btn-a-text"></span>
+        </button>
+        <button class="vote-btn btn-b" id="btn-vote-b">
+          <span class="vote-badge">B</span>
+          <span class="vote-opt-text" id="btn-b-text"></span>
+        </button>
+      </div>
+
+      <!-- Result bars (shown after voting) -->
+      <div class="result-area hidden" id="result-area">
+        <div class="voted-notice" id="voted-notice"></div>
+
+        <!-- A row -->
+        <div class="result-row">
+          <div class="result-header">
+            <div class="r-badge a">A</div>
+            <div class="r-text" id="r-text-a"></div>
+            <div class="r-pct a" id="r-pct-a">0%</div>
+          </div>
+          <div class="r-bar-track">
+            <div class="r-bar-fill a" id="r-bar-a" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- B row -->
+        <div class="result-row">
+          <div class="result-header">
+            <div class="r-badge b">B</div>
+            <div class="r-text" id="r-text-b"></div>
+            <div class="r-pct b" id="r-pct-b">0%</div>
+          </div>
+          <div class="r-bar-track">
+            <div class="r-bar-fill b" id="r-bar-b" style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="r-total" id="r-total">총 0명 투표</div>
+        <div class="waiting-next">다음 질문을 기다리는 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SUMMARY
+  ══════════════════════════════════════════════════════════ -->
+  <div id="screen-summary" class="hidden">
+    <div class="summary-header-p">
+      <h2>📊 최종 결과</h2>
+    </div>
+    <div class="summary-scroll" id="summary-list"></div>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let currentState = null;
+  let myVotes = {};   // { questionId: 'A' | 'B' }
+
+  // Restore votes from localStorage
+  try {
+    const stored = localStorage.getItem('balgame-votes');
+    if (stored) myVotes = JSON.parse(stored);
+  } catch {}
+
+  function saveMyVotes() {
+    try { localStorage.setItem('balgame-votes', JSON.stringify(myVotes)); } catch {}
+  }
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const $lobby   = document.getElementById('screen-lobby');
+  const $qScreen = document.getElementById('screen-question');
+  const $summary = document.getElementById('screen-summary');
+
+  const $qProgressText = document.getElementById('q-progress-text');
+  const $progressDots  = document.getElementById('progress-dots');
+  const $qText         = document.getElementById('q-text');
+
+  const $voteArea  = document.getElementById('vote-area');
+  const $btnVoteA  = document.getElementById('btn-vote-a');
+  const $btnVoteB  = document.getElementById('btn-vote-b');
+  const $btnAText  = document.getElementById('btn-a-text');
+  const $btnBText  = document.getElementById('btn-b-text');
+
+  const $resultArea  = document.getElementById('result-area');
+  const $votedNotice = document.getElementById('voted-notice');
+  const $rTextA      = document.getElementById('r-text-a');
+  const $rTextB      = document.getElementById('r-text-b');
+  const $rPctA       = document.getElementById('r-pct-a');
+  const $rPctB       = document.getElementById('r-pct-b');
+  const $rBarA       = document.getElementById('r-bar-a');
+  const $rBarB       = document.getElementById('r-bar-b');
+  const $rTotal      = document.getElementById('r-total');
+  const $summaryList = document.getElementById('summary-list');
+
+  // ── Socket events ──────────────────────────────────────────────────────────
+  socket.on('game:state', (state) => {
+    currentState = state;
+    render(state);
+  });
+
+  socket.on('game:voteUpdated', ({ questionId, votes }) => {
+    if (!currentState) return;
+    const cur = currentState.currentQuestion;
+    if (cur && cur.id === questionId) {
+      currentState.currentVotes = votes;
+      // Update result bars if showing
+      if (!$resultArea.classList.contains('hidden')) {
+        updateResultBars(votes);
+      }
+    }
+    if (currentState.allVotes) currentState.allVotes[questionId] = votes;
+  });
+
+  socket.on('vote:success', ({ choice }) => {
+    // Already handled in render via myVotes
+  });
+
+  socket.on('vote:duplicate', () => {
+    // Ignore — UI already shows result view
+  });
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function show(el, visible) {
+    el.classList.toggle('hidden', !visible);
+  }
+
+  function render(state) {
+    show($lobby,   state.phase === 'lobby');
+    show($qScreen, state.phase === 'question');
+    show($summary, state.phase === 'summary');
+
+    if (state.phase === 'question') renderQuestion(state);
+    if (state.phase === 'summary')  renderSummary(state);
+  }
+
+  function renderQuestion(state) {
+    const q = state.currentQuestion;
+    if (!q) return;
+
+    const idx   = state.currentIndex;
+    const total = state.questions.length;
+
+    $qProgressText.textContent = `질문 ${idx + 1} / ${total}`;
+
+    // Progress dots
+    $progressDots.innerHTML = '';
+    state.questions.forEach((_, i) => {
+      const dot = document.createElement('span');
+      dot.className = 'progress-dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
+      $progressDots.appendChild(dot);
+    });
+
+    $qText.textContent = q.text;
+    $btnAText.textContent = q.optionA;
+    $btnBText.textContent = q.optionB;
+
+    const myChoice = myVotes[q.id];
+
+    if (myChoice) {
+      // Already voted — show results
+      show($voteArea, false);
+      show($resultArea, true);
+
+      $rTextA.innerHTML = esc(q.optionA) + (myChoice === 'A' ? '<span class="chosen-mark">내 선택</span>' : '');
+      $rTextB.innerHTML = esc(q.optionB) + (myChoice === 'B' ? '<span class="chosen-mark">내 선택</span>' : '');
+      $votedNotice.innerHTML = `<strong>${myChoice === 'A' ? 'A. ' + esc(q.optionA) : 'B. ' + esc(q.optionB)}</strong> 를 선택했습니다`;
+
+      updateResultBars(state.currentVotes || { A: 0, B: 0 });
+    } else {
+      // Not voted — show vote buttons
+      show($voteArea, true);
+      show($resultArea, false);
+    }
+  }
+
+  function updateResultBars(votes) {
+    const a = votes.A || 0;
+    const b = votes.B || 0;
+    const total = a + b;
+    const pctA = total ? Math.round(a / total * 100) : 0;
+    const pctB = total ? 100 - pctA : 0;
+
+    $rBarA.style.width = pctA + '%';
+    $rBarB.style.width = pctB + '%';
+    $rPctA.textContent = pctA + '%';
+    $rPctB.textContent = pctB + '%';
+    $rTotal.textContent = `총 ${total}명 투표`;
+  }
+
+  function renderSummary(state) {
+    $summaryList.innerHTML = '';
+    state.questions.forEach((q, i) => {
+      const votes = (state.allVotes || {})[q.id] || { A: 0, B: 0 };
+      const a = votes.A || 0;
+      const b = votes.B || 0;
+      const total = a + b;
+      const pctA = total ? Math.round(a / total * 100) : 0;
+      const pctB = total ? 100 - pctA : 0;
+      const myChoice = myVotes[q.id];
+
+      const card = document.createElement('div');
+      card.className = 'summary-card-p';
+      card.innerHTML = `
+        <div class="sc-num">질문 ${i + 1}</div>
+        <div class="sc-text">${esc(q.text)}</div>
+        <div class="sc-row">
+          <div class="sc-badge a">A</div>
+          <div class="sc-label">${esc(q.optionA)}${myChoice === 'A' ? '<span class="sc-my">내 선택</span>' : ''}</div>
+          <div class="sc-track"><div class="sc-fill a" style="width:${pctA}%"></div></div>
+          <div class="sc-pct a">${pctA}%</div>
+        </div>
+        <div class="sc-row">
+          <div class="sc-badge b">B</div>
+          <div class="sc-label">${esc(q.optionB)}${myChoice === 'B' ? '<span class="sc-my">내 선택</span>' : ''}</div>
+          <div class="sc-track"><div class="sc-fill b" style="width:${pctB}%"></div></div>
+          <div class="sc-pct b">${pctB}%</div>
+        </div>
+        <div class="sc-total">총 ${total}명 투표</div>
+      `;
+      $summaryList.appendChild(card);
+    });
+  }
+
+  // ── Vote handlers ──────────────────────────────────────────────────────────
+  function vote(choice) {
+    if (!currentState) return;
+    const q = currentState.currentQuestion;
+    if (!q) return;
+    if (myVotes[q.id]) return;  // already voted
+
+    myVotes[q.id] = choice;
+    saveMyVotes();
+
+    socket.emit('participant:vote', { questionId: q.id, choice });
+
+    // Optimistically switch to result view
+    renderQuestion(currentState);
+  }
+
+  $btnVoteA.addEventListener('click', () => vote('A'));
+  $btnVoteB.addEventListener('click', () => vote('B'));
+
+  // ── Util ───────────────────────────────────────────────────────────────────
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

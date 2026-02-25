@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>밸런스 게임 — 진행자</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --bg2:      #161b22;
+      --bg3:      #21262d;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --a:        #3b82f6;
+      --a-dim:    #1e3a5f;
+      --b:        #f97316;
+      --b-dim:    #5c2a0a;
+      --green:    #22c55e;
+      --red:      #ef4444;
+      --radius:   10px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', -apple-system, 'Malgun Gothic', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-weight: 600;
+      transition: opacity .15s, transform .1s;
+    }
+    button:active { transform: scale(.97); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn-primary   { background: #238636; color: #fff; padding: .6rem 1.4rem; font-size: 1rem; }
+    .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); padding: .6rem 1.4rem; font-size: 1rem; }
+    .btn-danger    { background: var(--red); color: #fff; padding: .6rem 1.4rem; font-size: 1rem; }
+    .btn-ghost     { background: transparent; color: var(--muted); padding: .4rem .8rem; font-size: .85rem; }
+    .btn-ghost:hover { color: var(--text); }
+
+    /* ── Modal ───────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      width: min(480px, 90vw);
+    }
+    .modal-box h3 { font-size: 1.3rem; margin-bottom: 1.4rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: .4rem; }
+    .form-group input {
+      width: 100%; padding: .65rem .9rem;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 1rem; font-family: inherit;
+    }
+    .form-group input:focus { outline: 2px solid var(--a); border-color: transparent; }
+    .modal-actions { display: flex; gap: .7rem; justify-content: flex-end; margin-top: 1.4rem; }
+
+    /* ── Confirm dialog ──────────────────────────────────────── */
+    .confirm-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      width: min(380px, 90vw);
+      text-align: center;
+    }
+    .confirm-box p { font-size: 1.1rem; margin-bottom: 1.4rem; }
+    .confirm-actions { display: flex; gap: .7rem; justify-content: center; }
+
+    /* ════════════════════════════════════════════════════════════
+       LOBBY PHASE
+    ════════════════════════════════════════════════════════════ */
+    #lobby {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .lobby-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .lobby-header h1 { font-size: 2rem; }
+    .lobby-header .subtitle { color: var(--muted); font-size: 1rem; }
+
+    .lobby-body {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 1.5rem;
+      flex: 1;
+    }
+
+    /* Question list panel */
+    .q-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .q-panel-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .q-panel-header h2 { font-size: 1rem; color: var(--muted); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+
+    #question-list {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      padding: .5rem 0;
+    }
+
+    .q-item {
+      padding: .7rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; gap: .8rem;
+    }
+    .q-item:last-child { border-bottom: none; }
+    .q-num {
+      min-width: 26px; height: 26px;
+      background: var(--bg3); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; color: var(--muted); font-weight: 700; flex-shrink: 0;
+    }
+    .q-info { flex: 1; min-width: 0; }
+    .q-text { font-size: .95rem; font-weight: 600; line-height: 1.3; margin-bottom: .3rem; word-break: keep-all; }
+    .q-options { font-size: .78rem; color: var(--muted); }
+    .q-options .opt-a { color: var(--a); }
+    .q-options .opt-b { color: var(--b); }
+    .q-actions { display: flex; gap: .3rem; flex-shrink: 0; margin-top: 2px; }
+    .q-actions button { padding: .25rem .55rem; font-size: .75rem; border-radius: 6px; }
+    .btn-edit { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+    .btn-del  { background: transparent; color: var(--red); border: 1px solid var(--red); }
+
+    .q-add-btn {
+      margin: .8rem 1.2rem;
+      background: var(--bg3);
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      padding: .7rem;
+      width: calc(100% - 2.4rem);
+      border-radius: var(--radius);
+      font-size: .9rem;
+    }
+    .q-add-btn:hover { border-color: var(--a); color: var(--a); }
+
+    /* Start panel */
+    .start-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      text-align: center;
+    }
+    .q-ready-count { font-size: 1.1rem; color: var(--muted); }
+    .q-ready-count strong { font-size: 2.5rem; display: block; color: var(--green); margin-bottom: .2rem; }
+    #btn-start {
+      background: var(--green); color: #fff;
+      font-size: 1.4rem; padding: 1rem 2.5rem;
+      border-radius: 12px;
+    }
+    #btn-start:hover { opacity: .9; }
+
+    /* ════════════════════════════════════════════════════════════
+       QUESTION PHASE
+    ════════════════════════════════════════════════════════════ */
+    #game-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .game-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: .9rem 2rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .game-header h1 { font-size: 1.3rem; margin-right: auto; }
+    .progress-badge {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .4rem 1rem;
+      font-size: 1rem; font-weight: 700;
+      color: var(--text);
+    }
+
+    .game-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 3rem;
+      gap: 2rem;
+    }
+
+    #q-display-text {
+      font-size: clamp(1.8rem, 3.5vw, 3rem);
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.3;
+      max-width: 900px;
+      word-break: keep-all;
+    }
+
+    /* Vote bars */
+    .vote-bars {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .vote-row {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .opt-badge {
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; font-weight: 900;
+      flex-shrink: 0;
+    }
+    .opt-badge.a { background: var(--a-dim); color: var(--a); }
+    .opt-badge.b { background: var(--b-dim); color: var(--b); }
+
+    .bar-wrapper {
+      position: relative;
+      height: 70px;
+      background: var(--bg3);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      position: absolute; top: 0; left: 0; bottom: 0;
+      border-radius: 10px;
+      transition: width .5s cubic-bezier(.4,0,.2,1);
+      width: 0%;
+    }
+    .bar-fill.a { background: var(--a); }
+    .bar-fill.b { background: var(--b); }
+    .bar-label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center;
+      padding: 0 1rem;
+      font-size: 1.2rem; font-weight: 700;
+      color: #fff;
+      pointer-events: none;
+    }
+    .bar-opt-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-pct { font-size: 1.6rem; font-weight: 900; }
+
+    .vote-stat {
+      min-width: 80px;
+      text-align: right;
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .vote-stat strong { display: block; font-size: 1.4rem; color: var(--text); }
+
+    .total-votes {
+      font-size: 1.1rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* Nav bar */
+    .game-nav {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; gap: 1rem; justify-content: center; align-items: center;
+    }
+    .game-nav button {
+      font-size: 1.2rem;
+      padding: .8rem 2.5rem;
+    }
+    #btn-prev { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+    #btn-next { background: var(--a); color: #fff; }
+    #btn-end  { background: var(--green); color: #fff; }
+
+    /* ════════════════════════════════════════════════════════════
+       SUMMARY PHASE
+    ════════════════════════════════════════════════════════════ */
+    #summary-view {
+      flex: 1;
+      padding: 2.5rem 3rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .summary-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .summary-header h1 { font-size: 2rem; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .summary-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.4rem;
+    }
+    .summary-card .s-num { font-size: .75rem; color: var(--muted); margin-bottom: .4rem; }
+    .summary-card .s-text { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; word-break: keep-all; }
+    .summary-bar-row { display: flex; align-items: center; gap: .7rem; margin-bottom: .5rem; }
+    .s-badge {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 700; flex-shrink: 0;
+    }
+    .s-badge.a { background: var(--a-dim); color: var(--a); }
+    .s-badge.b { background: var(--b-dim); color: var(--b); }
+    .s-bar-track { flex: 1; height: 28px; background: var(--bg3); border-radius: 6px; overflow: hidden; }
+    .s-bar-fill { height: 100%; border-radius: 6px; transition: width .6s ease; }
+    .s-bar-fill.a { background: var(--a); }
+    .s-bar-fill.b { background: var(--b); }
+    .s-pct { font-size: .9rem; font-weight: 700; min-width: 42px; text-align: right; }
+    .s-opt-label { font-size: .78rem; color: var(--muted); margin-left: 35px; }
+    .s-total { font-size: .78rem; color: var(--muted); margin-top: .6rem; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .lobby-body { grid-template-columns: 1fr; }
+      .game-main { padding: 1.5rem 1rem; }
+      #q-display-text { font-size: 1.5rem; }
+      .opt-badge { width: 42px; height: 42px; font-size: 1.3rem; }
+      .bar-wrapper { height: 54px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOBBY PHASE
+══════════════════════════════════════════════════════════ -->
+<div id="lobby">
+  <div class="lobby-header">
+    <h1>⚖️ 밸런스 게임</h1>
+    <span class="subtitle">진행자 화면</span>
+  </div>
+
+  <div class="lobby-body">
+    <!-- Question management panel -->
+    <div class="q-panel">
+      <div class="q-panel-header">
+        <h2>질문 목록</h2>
+        <span id="q-count-badge" style="font-size:.85rem;color:var(--muted)"></span>
+      </div>
+      <ul id="question-list"></ul>
+      <button class="q-add-btn" id="btn-add-q">＋ 질문 추가</button>
+    </div>
+
+    <!-- Start panel -->
+    <div class="start-panel">
+      <div class="q-ready-count">
+        <strong id="ready-count">0</strong>
+        개의 질문 준비됨
+      </div>
+      <button id="btn-start">🎮 게임 시작</button>
+      <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem;">
+        참가자:<br>
+        <span id="participant-url" style="color:var(--a)"></span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     QUESTION PHASE
+══════════════════════════════════════════════════════════ -->
+<div id="game-view" class="hidden">
+  <header class="game-header">
+    <h1>⚖️ 밸런스 게임</h1>
+    <span class="progress-badge">질문 <span id="curr-num">1</span> / <span id="total-num">5</span></span>
+    <button class="btn-ghost" id="btn-open-edit">✏️ 질문 편집</button>
+    <button class="btn-ghost" style="color:var(--red)" id="btn-confirm-reset">↩ 처음으로</button>
+  </header>
+
+  <div class="game-main">
+    <div id="q-display-text"></div>
+
+    <div class="vote-bars">
+      <!-- Row A -->
+      <div class="vote-row">
+        <div class="opt-badge a">A</div>
+        <div class="bar-wrapper">
+          <div class="bar-fill a" id="bar-a"></div>
+          <div class="bar-label">
+            <span class="bar-opt-text" id="opt-a-label"></span>
+            <span class="bar-pct" id="pct-a">0%</span>
+          </div>
+        </div>
+        <div class="vote-stat">
+          <strong id="cnt-a">0</strong>명
+        </div>
+      </div>
+      <!-- Row B -->
+      <div class="vote-row">
+        <div class="opt-badge b">B</div>
+        <div class="bar-wrapper">
+          <div class="bar-fill b" id="bar-b"></div>
+          <div class="bar-label">
+            <span class="bar-opt-text" id="opt-b-label"></span>
+            <span class="bar-pct" id="pct-b">0%</span>
+          </div>
+        </div>
+        <div class="vote-stat">
+          <strong id="cnt-b">0</strong>명
+        </div>
+      </div>
+    </div>
+
+    <div class="total-votes" id="total-votes-label">총 0명 투표</div>
+  </div>
+
+  <nav class="game-nav">
+    <button id="btn-prev">◀ 이전 질문</button>
+    <button id="btn-next">다음 질문 ▶</button>
+    <button id="btn-end" class="hidden">📊 최종 결과 보기</button>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SUMMARY PHASE
+══════════════════════════════════════════════════════════ -->
+<div id="summary-view" class="hidden">
+  <div class="summary-header">
+    <h1>📊 최종 결과</h1>
+    <button class="btn-secondary" id="btn-back-to-lobby">↩ 처음으로</button>
+  </div>
+  <div class="summary-grid" id="summary-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════════ -->
+
+<!-- Question edit modal -->
+<div id="modal-q" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3 id="modal-title">질문 추가</h3>
+    <div class="form-group">
+      <label>질문 내용</label>
+      <input id="modal-text" type="text" placeholder="예) 밤새 과제 vs 아침 일찍 과제">
+    </div>
+    <div class="form-group">
+      <label>A 선택지</label>
+      <input id="modal-opt-a" type="text" placeholder="예) 밤새 과제">
+    </div>
+    <div class="form-group">
+      <label>B 선택지</label>
+      <input id="modal-opt-b" type="text" placeholder="예) 아침 일찍 과제">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="modal-cancel">취소</button>
+      <button class="btn-primary" id="modal-save">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm reset modal -->
+<div id="modal-confirm" class="modal-overlay hidden">
+  <div class="confirm-box">
+    <p>게임을 처음으로 되돌립니다.<br>모든 투표 데이터가 초기화됩니다.</p>
+    <div class="confirm-actions">
+      <button class="btn-secondary" id="confirm-cancel">취소</button>
+      <button class="btn-danger"    id="confirm-ok">초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- Question list (for editing during game) -->
+<div id="modal-list" class="modal-overlay hidden">
+  <div class="modal-box" style="max-height:80vh;display:flex;flex-direction:column;">
+    <h3 style="margin-bottom:1rem">질문 목록 편집</h3>
+    <ul id="modal-question-list" style="overflow-y:auto;flex:1;list-style:none;"></ul>
+    <div class="modal-actions" style="margin-top:1rem">
+      <button class="btn-primary" id="modal-list-add">＋ 질문 추가</button>
+      <button class="btn-secondary" id="modal-list-close">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let state = null;
+  let modalMode = null;   // 'add' | 'edit'
+  let editingId = null;
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const $lobby       = document.getElementById('lobby');
+  const $gameView    = document.getElementById('game-view');
+  const $summaryView = document.getElementById('summary-view');
+
+  // Lobby
+  const $qList       = document.getElementById('question-list');
+  const $readyCount  = document.getElementById('ready-count');
+  const $qCountBadge = document.getElementById('q-count-badge');
+  const $btnStart    = document.getElementById('btn-start');
+  const $btnAddQ     = document.getElementById('btn-add-q');
+
+  // Game view
+  const $currNum     = document.getElementById('curr-num');
+  const $totalNum    = document.getElementById('total-num');
+  const $qText       = document.getElementById('q-display-text');
+  const $optALabel   = document.getElementById('opt-a-label');
+  const $optBLabel   = document.getElementById('opt-b-label');
+  const $barA        = document.getElementById('bar-a');
+  const $barB        = document.getElementById('bar-b');
+  const $pctA        = document.getElementById('pct-a');
+  const $pctB        = document.getElementById('pct-b');
+  const $cntA        = document.getElementById('cnt-a');
+  const $cntB        = document.getElementById('cnt-b');
+  const $totalVotes  = document.getElementById('total-votes-label');
+  const $btnPrev     = document.getElementById('btn-prev');
+  const $btnNext     = document.getElementById('btn-next');
+  const $btnEnd      = document.getElementById('btn-end');
+
+  // Summary
+  const $summaryGrid = document.getElementById('summary-grid');
+
+  // Modals
+  const $modalQ      = document.getElementById('modal-q');
+  const $modalTitle  = document.getElementById('modal-title');
+  const $modalText   = document.getElementById('modal-text');
+  const $modalOptA   = document.getElementById('modal-opt-a');
+  const $modalOptB   = document.getElementById('modal-opt-b');
+  const $modalList   = document.getElementById('modal-list');
+  const $modalQLst   = document.getElementById('modal-question-list');
+  const $modalConfirm= document.getElementById('modal-confirm');
+
+  // ── Socket events ──────────────────────────────────────────────────────────
+  socket.on('game:state', (s) => {
+    state = s;
+    render(s);
+  });
+
+  socket.on('game:voteUpdated', ({ questionId, votes }) => {
+    if (!state) return;
+    const cur = state.currentQuestion;
+    if (cur && cur.id === questionId) {
+      state.currentVotes = votes;
+      updateVoteBars(cur, votes);
+    }
+    // Also update allVotes
+    if (state.allVotes) state.allVotes[questionId] = votes;
+  });
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function render(s) {
+    show($lobby,       s.phase === 'lobby');
+    show($gameView,    s.phase === 'question');
+    show($summaryView, s.phase === 'summary');
+
+    if (s.phase === 'lobby')    renderLobby(s);
+    if (s.phase === 'question') renderQuestion(s);
+    if (s.phase === 'summary')  renderSummary(s);
+  }
+
+  function show(el, visible) {
+    el.classList.toggle('hidden', !visible);
+  }
+
+  // ── Lobby ──────────────────────────────────────────────────────────────────
+  function renderLobby(s) {
+    const count = s.questions.length;
+    $readyCount.textContent = count;
+    $qCountBadge.textContent = `${count}개`;
+    $btnStart.disabled = count === 0;
+    renderQList($qList, s.questions);
+    // Show participant URL
+    const url = `${location.protocol}//${location.hostname}:${location.port}/participant.html`;
+    document.getElementById('participant-url').textContent = url;
+  }
+
+  function renderQList(container, questions) {
+    container.innerHTML = '';
+    questions.forEach((q, i) => {
+      const li = document.createElement('li');
+      li.className = 'q-item';
+      li.innerHTML = `
+        <div class="q-num">${i + 1}</div>
+        <div class="q-info">
+          <div class="q-text">${esc(q.text)}</div>
+          <div class="q-options">
+            <span class="opt-a">A. ${esc(q.optionA)}</span>
+            &nbsp;/&nbsp;
+            <span class="opt-b">B. ${esc(q.optionB)}</span>
+          </div>
+        </div>
+        <div class="q-actions">
+          <button class="btn-edit" data-id="${q.id}">수정</button>
+          <button class="btn-del"  data-id="${q.id}">삭제</button>
+        </div>
+      `;
+      li.querySelector('.btn-edit').addEventListener('click', () => openEditModal(q));
+      li.querySelector('.btn-del') .addEventListener('click', () => socket.emit('host:delete', q.id));
+      container.appendChild(li);
+    });
+  }
+
+  // ── Question view ──────────────────────────────────────────────────────────
+  function renderQuestion(s) {
+    const q = s.currentQuestion;
+    if (!q) return;
+
+    $currNum.textContent  = s.currentIndex + 1;
+    $totalNum.textContent = s.questions.length;
+    $qText.textContent    = q.text;
+    $optALabel.textContent = q.optionA;
+    $optBLabel.textContent = q.optionB;
+
+    const isFirst = s.currentIndex === 0;
+    const isLast  = s.currentIndex === s.questions.length - 1;
+    $btnPrev.disabled = isFirst;
+    show($btnNext, !isLast);
+    show($btnEnd,   isLast);
+
+    updateVoteBars(q, s.currentVotes || { A: 0, B: 0 });
+  }
+
+  function updateVoteBars(q, votes) {
+    const a = votes.A || 0;
+    const b = votes.B || 0;
+    const total = a + b;
+    const pctA = total ? Math.round(a / total * 100) : 0;
+    const pctB = total ? 100 - pctA : 0;
+
+    $barA.style.width = pctA + '%';
+    $barB.style.width = pctB + '%';
+    $pctA.textContent = pctA + '%';
+    $pctB.textContent = pctB + '%';
+    $cntA.textContent = a;
+    $cntB.textContent = b;
+    $totalVotes.textContent = `총 ${total}명 투표`;
+  }
+
+  // ── Summary ────────────────────────────────────────────────────────────────
+  function renderSummary(s) {
+    $summaryGrid.innerHTML = '';
+    s.questions.forEach((q, i) => {
+      const votes = (s.allVotes || {})[q.id] || { A: 0, B: 0 };
+      const a = votes.A || 0;
+      const b = votes.B || 0;
+      const total = a + b;
+      const pctA = total ? Math.round(a / total * 100) : 0;
+      const pctB = total ? 100 - pctA : 0;
+
+      const card = document.createElement('div');
+      card.className = 'summary-card';
+      card.innerHTML = `
+        <div class="s-num">질문 ${i + 1}</div>
+        <div class="s-text">${esc(q.text)}</div>
+        <div class="summary-bar-row">
+          <div class="s-badge a">A</div>
+          <div class="s-bar-track">
+            <div class="s-bar-fill a" style="width:${pctA}%"></div>
+          </div>
+          <div class="s-pct" style="color:var(--a)">${pctA}%</div>
+        </div>
+        <div class="s-opt-label">${esc(q.optionA)}</div>
+        <div class="summary-bar-row" style="margin-top:.5rem">
+          <div class="s-badge b">B</div>
+          <div class="s-bar-track">
+            <div class="s-bar-fill b" style="width:${pctB}%"></div>
+          </div>
+          <div class="s-pct" style="color:var(--b)">${pctB}%</div>
+        </div>
+        <div class="s-opt-label">${esc(q.optionB)}</div>
+        <div class="s-total">총 ${total}명 투표</div>
+      `;
+      $summaryGrid.appendChild(card);
+    });
+  }
+
+  // ── Modal helpers ──────────────────────────────────────────────────────────
+  function openAddModal() {
+    modalMode = 'add';
+    editingId = null;
+    $modalTitle.textContent = '질문 추가';
+    $modalText.value = '';
+    $modalOptA.value = '';
+    $modalOptB.value = '';
+    $modalQ.classList.remove('hidden');
+    $modalText.focus();
+  }
+
+  function openEditModal(q) {
+    modalMode = 'edit';
+    editingId = q.id;
+    $modalTitle.textContent = '질문 수정';
+    $modalText.value  = q.text;
+    $modalOptA.value  = q.optionA;
+    $modalOptB.value  = q.optionB;
+    $modalQ.classList.remove('hidden');
+    // close list modal if open
+    $modalList.classList.add('hidden');
+    $modalText.focus();
+  }
+
+  function closeModal() {
+    $modalQ.classList.add('hidden');
+  }
+
+  function saveModal() {
+    const text   = $modalText.value.trim();
+    const optionA = $modalOptA.value.trim();
+    const optionB = $modalOptB.value.trim();
+    if (!text || !optionA || !optionB) {
+      alert('모든 항목을 입력해주세요.');
+      return;
+    }
+    if (modalMode === 'add') {
+      socket.emit('host:add', { text, optionA, optionB });
+    } else {
+      socket.emit('host:update', { id: editingId, text, optionA, optionB });
+    }
+    closeModal();
+  }
+
+  // ── Event listeners ────────────────────────────────────────────────────────
+
+  // Lobby
+  $btnAddQ.addEventListener('click', openAddModal);
+  $btnStart.addEventListener('click', () => socket.emit('host:next'));
+
+  // Game nav
+  $btnPrev.addEventListener('click', () => socket.emit('host:prev'));
+  $btnNext.addEventListener('click', () => socket.emit('host:next'));
+  $btnEnd .addEventListener('click', () => socket.emit('host:next'));
+
+  // Edit during game
+  document.getElementById('btn-open-edit').addEventListener('click', () => {
+    if (!state) return;
+    renderQList($modalQLst, state.questions);
+    $modalList.classList.remove('hidden');
+  });
+  document.getElementById('modal-list-close').addEventListener('click', () => {
+    $modalList.classList.add('hidden');
+  });
+  document.getElementById('modal-list-add').addEventListener('click', openAddModal);
+  $modalList.addEventListener('click', (e) => {
+    if (e.target === $modalList) $modalList.classList.add('hidden');
+  });
+
+  // Confirm reset
+  document.getElementById('btn-confirm-reset').addEventListener('click', () => {
+    $modalConfirm.classList.remove('hidden');
+  });
+  document.getElementById('confirm-cancel').addEventListener('click', () => {
+    $modalConfirm.classList.add('hidden');
+  });
+  document.getElementById('confirm-ok').addEventListener('click', () => {
+    socket.emit('host:reset');
+    $modalConfirm.classList.add('hidden');
+  });
+  $modalConfirm.addEventListener('click', (e) => {
+    if (e.target === $modalConfirm) $modalConfirm.classList.add('hidden');
+  });
+
+  // Summary back
+  document.getElementById('btn-back-to-lobby').addEventListener('click', () => {
+    $modalConfirm.classList.remove('hidden');
+  });
+
+  // Modal Q
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-save')  .addEventListener('click', saveModal);
+  $modalQ.addEventListener('click', (e) => { if (e.target === $modalQ) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Enter' && !$modalQ.classList.contains('hidden')) saveModal();
+  });
+
+  // ── Util ───────────────────────────────────────────────────────────────────
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

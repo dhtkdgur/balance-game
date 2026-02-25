@@ -1,0 +1,16 @@
+{
+  "name": "balance-game",
+  "version": "1.0.0",
+  "description": "밸런스 게임 웹 애플리케이션",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.3"
+  }
+}
