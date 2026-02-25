@@ -317,30 +317,23 @@
     }
     .sc-num { font-size: .75rem; color: var(--muted); margin-bottom: .3rem; }
     .sc-text { font-size: .95rem; font-weight: 700; margin-bottom: .8rem; word-break: keep-all; }
+    .sc-row { display: flex; align-items: center; gap: .6rem; margin-bottom: .4rem; }
+    .sc-badge {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; flex-shrink: 0;
+    }
+    .sc-badge.a { background: var(--a-dim); color: var(--a); }
+    .sc-badge.b { background: var(--b-dim); color: var(--b); }
+    .sc-label { flex: 1; font-size: .85rem; }
+    .sc-track { flex: 2; height: 20px; background: var(--bg3); border-radius: 5px; overflow: hidden; }
+    .sc-fill { height: 100%; border-radius: 5px; transition: width .5s ease; }
+    .sc-fill.a { background: var(--a); }
+    .sc-fill.b { background: var(--b); }
+    .sc-pct { font-size: .9rem; font-weight: 700; min-width: 36px; text-align: right; }
+    .sc-pct.a { color: var(--a); }
+    .sc-pct.b { color: var(--b); }
     .sc-total { font-size: .75rem; color: var(--muted); margin-top: .4rem; }
-
-    .split-bar {
-      display: flex;
-      height: 40px;
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--bg3);
-      margin-bottom: .5rem;
-    }
-    .split-seg {
-      display: flex;
-      align-items: center;
-      overflow: hidden;
-      transition: width .6s ease;
-      min-width: 0;
-      flex-shrink: 0;
-    }
-    .split-seg.a { background: var(--a); justify-content: flex-start; padding-left: .6rem; }
-    .split-seg.b { background: var(--b); justify-content: flex-end;   padding-right: .6rem; }
-    .split-label  { font-size: .8rem; font-weight: 700; color: rgba(0,0,0,.7); white-space: nowrap; }
-    .split-opts   { display: flex; justify-content: space-between; font-size: .78rem; }
-    .split-opt-a  { color: var(--a); opacity: .9; }
-    .split-opt-b  { color: var(--b); opacity: .9; }
     .sc-my {
       display: inline-block;
       font-size: .7rem; font-weight: 700;
@@ -590,17 +583,17 @@
       card.innerHTML = `
         <div class="sc-num">질문 ${i + 1}</div>
         <div class="sc-text">${esc(q.text)}</div>
-        <div class="split-bar">
-          <div class="split-seg a" style="width:${pctA}%">
-            <span class="split-label">A &nbsp;${pctA}%</span>
-          </div>
-          <div class="split-seg b" style="width:${pctB}%">
-            <span class="split-label">${pctB}% &nbsp;B</span>
-          </div>
+        <div class="sc-row">
+          <div class="sc-badge a">A</div>
+          <div class="sc-label">${esc(q.optionA)}${myChoice === 'A' ? '<span class="sc-my">내 선택</span>' : ''}</div>
+          <div class="sc-track"><div class="sc-fill a" style="width:${pctA}%"></div></div>
+          <div class="sc-pct a">${pctA}%</div>
         </div>
-        <div class="split-opts">
-          <span class="split-opt-a">A. ${esc(q.optionA)}${myChoice === 'A' ? '<span class="sc-my">내 선택</span>' : ''}</span>
-          <span class="split-opt-b">B. ${esc(q.optionB)}${myChoice === 'B' ? '<span class="sc-my">내 선택</span>' : ''}</span>
+        <div class="sc-row">
+          <div class="sc-badge b">B</div>
+          <div class="sc-label">${esc(q.optionB)}${myChoice === 'B' ? '<span class="sc-my">내 선택</span>' : ''}</div>
+          <div class="sc-track"><div class="sc-fill b" style="width:${pctB}%"></div></div>
+          <div class="sc-pct b">${pctB}%</div>
         </div>
         <div class="sc-total">총 ${total}명 투표</div>
       `;
