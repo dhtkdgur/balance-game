@@ -360,22 +360,17 @@
       border-radius: 8px;
       overflow: hidden;
       background: var(--bg3);
-      margin-bottom: .5rem;
+      margin-bottom: .4rem;
     }
-    .split-seg {
-      display: flex;
-      align-items: center;
-      overflow: hidden;
-      transition: width .6s ease;
-      min-width: 0;
-      flex-shrink: 0;
-    }
-    .split-seg.a { background: var(--a); justify-content: flex-start; padding-left: .7rem; }
-    .split-seg.b { background: var(--b); justify-content: flex-end;   padding-right: .7rem; }
-    .split-label  { font-size: .85rem; font-weight: 700; color: rgba(0,0,0,.7); white-space: nowrap; }
-    .split-opts   { display: flex; justify-content: space-between; font-size: .78rem; }
-    .split-opt-a  { color: var(--a); opacity: .9; }
-    .split-opt-b  { color: var(--b); opacity: .9; }
+    .split-seg   { transition: width .6s ease; flex-shrink: 0; }
+    .split-seg.a { background: var(--a); }
+    .split-seg.b { background: var(--b); }
+    .split-meta  { display: flex; justify-content: space-between; margin-bottom: .3rem; font-size: .88rem; font-weight: 700; }
+    .split-pct-a { color: var(--a); }
+    .split-pct-b { color: var(--b); }
+    .split-opts  { display: flex; justify-content: space-between; font-size: .78rem; }
+    .split-opt-a { color: var(--a); opacity: .9; }
+    .split-opt-b { color: var(--b); opacity: .9; }
 
     /* ── Responsive ──────────────────────────────────────────── */
     @media (max-width: 700px) {
@@ -714,12 +709,12 @@
         <div class="s-num">질문 ${i + 1}</div>
         <div class="s-text">${esc(q.text)}</div>
         <div class="split-bar">
-          <div class="split-seg a" style="width:${pctA}%">
-            <span class="split-label">A &nbsp;${pctA}%</span>
-          </div>
-          <div class="split-seg b" style="width:${pctB}%">
-            <span class="split-label">${pctB}% &nbsp;B</span>
-          </div>
+          <div class="split-seg a" style="width:${pctA}%"></div>
+          <div class="split-seg b" style="width:${pctB}%"></div>
+        </div>
+        <div class="split-meta">
+          <span class="split-pct-a">A &nbsp;${pctA}%</span>
+          <span class="split-pct-b">${pctB}% &nbsp;B</span>
         </div>
         <div class="split-opts">
           <span class="split-opt-a">A. ${esc(q.optionA)}</span>
