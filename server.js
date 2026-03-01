@@ -12,7 +12,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Game State ────────────────────────────────────────────────────────────────
 
 let state = {
-  phase: 'lobby', // 'lobby' | 'question' | 'summary'
+  phase: 'setup', // 'setup' | 'lobby' | 'question' | 'summary'
   questions: [
     { id: 1, text: '밤새 과제 vs 아침 일찍 일어나서 과제', optionA: '밤새 과제', optionB: '아침 일찍 과제' },
     { id: 2, text: '팀플 할 때 조장 vs 팀원', optionA: '조장', optionB: '팀원' },
@@ -27,6 +27,8 @@ let state = {
 
 // Track voted questions per socket session: socketId → Set<questionId>
 const votedMap = new Map();
+// Track host sockets to exclude from participantCount
+const hostSockets = new Set();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -48,11 +50,16 @@ function buildState() {
     currentQuestion: q,
     currentVotes: q ? votesFor(q.id) : null,
     allVotes: state.votes,
+    participantCount: Math.max(0, io.sockets.sockets.size - hostSockets.size),
   };
 }
 
 function broadcast() {
   io.emit('game:state', buildState());
+}
+
+function broadcastCount() {
+  io.emit('count:update', { participantCount: Math.max(0, io.sockets.sockets.size - hostSockets.size) });
 }
 
 // ── Socket Handlers ───────────────────────────────────────────────────────────
@@ -61,12 +68,21 @@ io.on('connection', (socket) => {
   console.log(`[+] ${socket.id}`);
   votedMap.set(socket.id, new Set());
 
-  // Send full state on connect
+  // Send full state to the new connection only
   socket.emit('game:state', buildState());
+  // Notify everyone of updated participant count (lightweight)
+  broadcastCount();
+
+  socket.on('host:register', () => {
+    hostSockets.add(socket.id);
+    broadcastCount();
+  });
 
   socket.on('disconnect', () => {
     votedMap.delete(socket.id);
+    hostSockets.delete(socket.id);
     console.log(`[-] ${socket.id}`);
+    broadcastCount();
   });
 
   // ── Host: question management ─────────────────────────────────────────────
@@ -101,7 +117,7 @@ io.on('connection', (socket) => {
       state.currentIndex = Math.max(0, state.questions.length - 1);
     }
     if (state.questions.length === 0) {
-      state.phase = 'lobby';
+      state.phase = 'setup';
       state.currentIndex = -1;
     }
     broadcast();
@@ -111,7 +127,9 @@ io.on('connection', (socket) => {
 
   socket.on('host:next', () => {
     if (state.questions.length === 0) return;
-    if (state.phase === 'lobby') {
+    if (state.phase === 'setup') {
+      state.phase = 'lobby';
+    } else if (state.phase === 'lobby') {
       state.phase = 'question';
       state.currentIndex = 0;
     } else if (state.phase === 'question') {
@@ -125,7 +143,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('host:prev', () => {
-    if (state.phase === 'question' && state.currentIndex > 0) {
+    if (state.phase === 'lobby') {
+      state.phase = 'setup';
+      broadcast();
+    } else if (state.phase === 'question' && state.currentIndex > 0) {
       state.currentIndex--;
       broadcast();
     } else if (state.phase === 'summary') {
@@ -135,7 +156,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('host:reset', () => {
-    state.phase = 'lobby';
+    state.phase = 'setup';
     state.currentIndex = -1;
     state.votes = {};
     votedMap.forEach(s => s.clear());
