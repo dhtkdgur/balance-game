@@ -8,27 +8,39 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #582b2b;
-      --bg2:      #3d1a1a;
-      --bg3:      #4a2020;
-      --border:   #7c3a3a;
-      --text:     #f5e4e3;
-      --muted:    #c49898;
-      --a:        #f5c130;
-      --a-hover:  #d4a820;
-      --a-dim:    #3d2a06;
-      --b:        #e8754a;
-      --b-hover:  #d4603b;
-      --b-dim:    #3d1508;
-      --green:    #c87a40;
-      --radius:   16px;
+      /* ── Colors ── */
+      --bg:       #582B2B;
+      --bg2:      #3D1A1A;
+      --bg3:      #4A2323;
+      --border:   #7A4040;
+      --text:     #FAECB6;
+      --muted:    #C9A96E;
+      --a:        #F9A822;
+      --a-hover:  #D98E18;
+      --a-dim:    #4A3500;
+      --b:        #E8874A;
+      --b-hover:  #C96E35;
+      --b-dim:    #472010;
+      --accent:   #C87A40;
+      /* ── Radius ── */
+      --radius-sm:   8px;
+      --radius-md:   12px;
+      --radius-lg:   20px;
+      --radius-pill: 9999px;
+      /* ── Shadows ── */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.04) inset;
+      --shadow-md: 0 4px 16px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.05) inset;
+      /* ── Focus ── */
+      --focus-ring: 0 0 0 3px rgba(249,168,34,.45);
     }
 
-    html, body {
-      height: 100%;
+    html, body { height: 100%; }
+    body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Segoe UI', -apple-system, 'Malgun Gothic', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       overflow: hidden;
     }
 
@@ -39,6 +51,15 @@
     }
 
     .hidden { display: none !important; }
+
+    :focus-visible {
+      outline: 3px solid rgba(249,168,34,.9);
+      outline-offset: 2px;
+      box-shadow: var(--focus-ring);
+    }
+    @media (forced-colors: active) {
+      :focus-visible { outline: 3px solid ButtonText; box-shadow: none; }
+    }
 
     /* ════════════════════════════════════════════════════════════
        LOBBY SCREEN
@@ -60,11 +81,11 @@
     }
 
     @keyframes pulse {
-      0%, 100% { transform: scale(1);   opacity: 1; }
-      50%       { transform: scale(1.1); opacity: .8; }
+      0%, 100% { transform: scale(1);    opacity: 1; }
+      50%       { transform: scale(1.08); opacity: .85; }
     }
 
-    .lobby-title { font-size: 2.2rem; font-weight: 800; }
+    .lobby-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; }
     .lobby-sub   { font-size: 1.1rem; color: var(--muted); }
 
     .waiting-dots::after {
@@ -108,10 +129,10 @@
       background: var(--bg3);
       border: 1px solid var(--border);
       display: inline-block;
-      transition: background .3s;
+      transition: background .3s, transform 150ms cubic-bezier(.34,1.56,.64,1);
     }
-    .progress-dot.active { background: var(--a); }
-    .progress-dot.done   { background: var(--green); }
+    .progress-dot.active { background: var(--a); transform: scale(1.3); }
+    .progress-dot.done   { background: var(--accent); }
 
     .q-body {
       flex: 1;
@@ -131,6 +152,7 @@
       font-size: clamp(1.1rem, 4vw, 1.5rem);
       font-weight: 700;
       line-height: 1.4;
+      letter-spacing: -0.01em;
       word-break: keep-all;
     }
 
@@ -151,7 +173,7 @@
       cursor: pointer;
       border: none;
       font-family: inherit;
-      transition: filter .15s, transform .12s;
+      transition: filter 150ms, transform 80ms cubic-bezier(0,0,.2,1);
       position: relative;
       overflow: hidden;
       -webkit-tap-highlight-color: transparent;
@@ -169,8 +191,7 @@
       background: var(--b);
     }
 
-    .vote-btn:hover:not(:disabled).btn-a { filter: brightness(1.1); }
-    .vote-btn:hover:not(:disabled).btn-b { filter: brightness(1.1); }
+    .vote-btn:hover:not(:disabled) { filter: brightness(1.08); }
 
     .vote-badge {
       font-size: clamp(2.5rem, 12vw, 4.5rem);
@@ -201,11 +222,12 @@
     .voted-notice {
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-md);
       padding: .8rem 1rem;
       text-align: center;
       font-size: .9rem;
       color: var(--muted);
+      box-shadow: var(--shadow-sm);
     }
     .voted-notice strong { color: var(--text); }
 
@@ -221,7 +243,7 @@
     }
     .r-badge {
       width: 36px; height: 36px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       display: flex; align-items: center; justify-content: center;
       font-size: 1rem; font-weight: 800;
       flex-shrink: 0;
@@ -243,12 +265,12 @@
     .r-bar-track {
       height: 16px;
       background: var(--bg3);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
     }
     .r-bar-fill {
       height: 100%;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       transition: width .5s cubic-bezier(.4,0,.2,1);
     }
     .r-bar-fill.a { background: var(--a); }
@@ -257,12 +279,12 @@
     /* Chosen indicator */
     .chosen-mark {
       display: inline-block;
-      background: var(--green);
+      background: var(--accent);
       color: #fff;
       font-size: .7rem;
       font-weight: 700;
       padding: .15rem .5rem;
-      border-radius: 20px;
+      border-radius: var(--radius-pill);
       margin-left: .5rem;
       vertical-align: middle;
     }
@@ -298,7 +320,7 @@
       padding: 1rem 1.2rem;
       text-align: center;
     }
-    .summary-header-p h2 { font-size: 1.4rem; font-weight: 800; }
+    .summary-header-p h2 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.01em; }
 
     .summary-scroll {
       flex: 1;
@@ -312,21 +334,22 @@
     .summary-card-p {
       background: var(--bg2);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-md);
       padding: 1rem 1.2rem;
+      box-shadow: var(--shadow-sm);
     }
     .sc-num { font-size: .75rem; color: var(--muted); margin-bottom: .3rem; }
     .sc-text { font-size: .95rem; font-weight: 700; margin-bottom: .8rem; word-break: keep-all; }
     .sc-total { font-size: .75rem; color: var(--muted); margin-top: .4rem; }
     .split-bar {
       display: flex;
-      height: 36px;
-      border-radius: 8px;
+      height: 36px; /* 모바일 참가자 화면 (compact) */
+      border-radius: var(--radius-sm);
       overflow: hidden;
       background: var(--bg3);
       margin-bottom: .4rem;
     }
-    .split-seg   { transition: width .5s ease; flex-shrink: 0; }
+    .split-seg   { transition: width .5s cubic-bezier(.4,0,.2,1); flex-shrink: 0; }
     .split-seg.a { background: var(--a); }
     .split-seg.b { background: var(--b); }
     .split-meta  { display: flex; justify-content: space-between; margin-bottom: .3rem; font-size: .85rem; font-weight: 700; }
@@ -338,9 +361,17 @@
     .sc-my {
       display: inline-block;
       font-size: .7rem; font-weight: 700;
-      background: var(--green); color: #fff;
-      padding: .1rem .4rem; border-radius: 20px;
+      background: var(--accent); color: #fff;
+      padding: .1rem .4rem; border-radius: var(--radius-pill);
       margin-left: .3rem; vertical-align: middle;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
     }
   </style>
 </head>
@@ -353,7 +384,7 @@
   <div id="screen-lobby">
     <div class="lobby-icon">⚖️</div>
     <div class="lobby-title">밸런스 게임</div>
-    <div class="lobby-sub">진행자가 게임을 시작할 때까지 기다려주세요<span class="waiting-dots"></span></div>
+    <div class="lobby-sub" aria-label="진행자가 게임을 시작할 때까지 기다려주세요">진행자가 게임을 시작할 때까지 기다려주세요<span class="waiting-dots" aria-hidden="true"></span></div>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════
