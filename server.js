@@ -149,6 +149,9 @@ io.on('connection', (socket) => {
     } else if (state.phase === 'question' && state.currentIndex > 0) {
       state.currentIndex--;
       broadcast();
+    } else if (state.phase === 'question' && state.currentIndex === 0) {
+      state.phase = 'lobby';
+      broadcast();
     } else if (state.phase === 'summary') {
       state.phase = 'question';
       broadcast();

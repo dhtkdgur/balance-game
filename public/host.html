@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>밸런스 게임 — 진행자</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -771,15 +771,19 @@
         $qrContainer.textContent = '⚠️ QR 라이브러리 로드 실패 — 네트워크를 확인하세요';
         return;
       }
-      const canvas = document.createElement('canvas');
-      QRCode.toCanvas(canvas, url, { width: 280, margin: 2 }, function(err) {
-        if (!err) {
-          $qrContainer.appendChild(canvas);
-          qrGenerated = true;
-        } else {
-          $qrContainer.textContent = '⚠️ QR 생성 실패';
-        }
-      });
+      try {
+        new QRCode($qrContainer, {
+          text: url,
+          width: 280,
+          height: 280,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H,
+        });
+        qrGenerated = true;
+      } catch (e) {
+        $qrContainer.textContent = '⚠️ QR 생성 실패';
+      }
     }
   }
 
