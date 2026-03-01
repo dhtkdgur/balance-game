@@ -538,16 +538,29 @@
   }
 
   function render(state) {
-    // 로비로 처음 전환될 때만 투표 기록 초기화 (중복 localStorage 쓰기 방지)
-    if (prevPhase !== 'lobby' && state.phase === 'lobby') {
+    // setup 단계로 처음 전환될 때만 투표 기록 초기화
+    if (prevPhase !== 'setup' && state.phase === 'setup') {
       myVotes = {};
       saveMyVotes();
     }
     prevPhase = state.phase;
 
-    show($lobby,   state.phase === 'lobby');
+    const isWaiting = state.phase === 'setup' || state.phase === 'lobby';
+    show($lobby,   isWaiting);
     show($qScreen, state.phase === 'question');
     show($summary, state.phase === 'summary');
+
+    // 단계별 대기 메시지 차별화
+    if (isWaiting) {
+      const subEl = $lobby.querySelector('.lobby-sub');
+      if (subEl) {
+        if (state.phase === 'setup') {
+          subEl.innerHTML = '게임 준비 중입니다<span class="waiting-dots" aria-hidden="true"></span>';
+        } else {
+          subEl.innerHTML = '진행자가 게임을 시작할 때까지 기다려주세요<span class="waiting-dots" aria-hidden="true"></span>';
+        }
+      }
+    }
 
     if (state.phase === 'question') renderQuestion(state);
     if (state.phase === 'summary')  renderSummary(state);

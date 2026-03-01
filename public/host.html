@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>밸런스 게임 — 진행자</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -117,9 +118,9 @@
     .confirm-actions { display: flex; gap: .7rem; justify-content: center; }
 
     /* ════════════════════════════════════════════════════════════
-       LOBBY PHASE
+       SETUP PHASE  (질문 편집 — 프로젝터 노출 전 단계)
     ════════════════════════════════════════════════════════════ */
-    #lobby {
+    #setup {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -218,12 +219,49 @@
     }
     .q-ready-count { font-size: 1.1rem; color: var(--muted); }
     .q-ready-count strong { font-size: 2.5rem; display: block; color: var(--accent); margin-bottom: .2rem; }
-    #btn-start {
+    #btn-go-waiting {
       background: var(--accent); color: #fff;
       font-size: 1.4rem; padding: 1rem 2.5rem;
       border-radius: var(--radius-md);
     }
-    #btn-start:hover { opacity: .9; box-shadow: 0 0 20px rgba(200,122,64,.4), var(--shadow-md); }
+    #btn-go-waiting:hover { opacity: .9; box-shadow: 0 0 20px rgba(200,122,64,.4), var(--shadow-md); }
+
+    /* ════════════════════════════════════════════════════════════
+       WAITING/LOBBY PHASE  (QR 대기 화면 — 빔 프로젝터용)
+    ════════════════════════════════════════════════════════════ */
+    #waiting {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .waiting-title { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; letter-spacing: -0.02em; }
+    .waiting-sub   { font-size: 1.2rem; color: var(--muted); }
+    #qr-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .participant-count-display { font-size: 1.4rem; color: var(--muted); }
+    .participant-count-display strong { display: block; font-size: 3.5rem; font-weight: 900; color: var(--text); line-height: 1.1; }
+    .waiting-url { font-size: 1rem; color: var(--a); word-break: break-all; }
+    .waiting-nav {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; gap: 1rem; justify-content: center;
+      position: fixed; bottom: 0; left: 0; right: 0;
+    }
+    .waiting-nav button { font-size: 1.2rem; padding: .8rem 2.5rem; border-radius: var(--radius-md); }
+    #waiting { padding-bottom: 6rem; } /* space for fixed nav */
+    #btn-waiting-start { background: var(--a); color: #fff; }
+    #btn-waiting-start:hover { box-shadow: 0 0 20px rgba(249,168,34,.4), var(--shadow-md); }
 
     /* ════════════════════════════════════════════════════════════
        QUESTION PHASE
@@ -420,6 +458,9 @@
     /* ── Responsive ──────────────────────────────────────────── */
     @media (max-width: 700px) {
       .lobby-body { grid-template-columns: 1fr; }
+      #waiting { gap: 1.2rem; padding: 1.5rem 1rem 6rem; }
+      .waiting-title { font-size: 1.6rem; }
+      #qr-container { padding: 14px; }
       .game-main { padding: 1.5rem 1rem; }
       #q-display-text { font-size: 1.5rem; }
       .opt-badge { width: 42px; height: 42px; font-size: 1.3rem; }
@@ -430,12 +471,12 @@
 <body>
 
 <!-- ══════════════════════════════════════════════════════════
-     LOBBY PHASE
+     SETUP PHASE  (질문 편집 화면)
 ══════════════════════════════════════════════════════════ -->
-<div id="lobby">
+<div id="setup">
   <div class="lobby-header">
     <h1>⚖️ 밸런스 게임</h1>
-    <span class="subtitle">진행자 화면</span>
+    <span class="subtitle">진행자 — 질문 설정</span>
   </div>
 
   <div class="lobby-body">
@@ -449,19 +490,40 @@
       <button class="q-add-btn" id="btn-add-q">＋ 질문 추가</button>
     </div>
 
-    <!-- Start panel -->
+    <!-- Ready panel -->
     <div class="start-panel">
       <div class="q-ready-count">
         <strong id="ready-count">0</strong>
         개의 질문 준비됨
       </div>
-      <button id="btn-start">🎮 게임 시작</button>
+      <button id="btn-go-waiting" disabled>📽 대기 화면으로</button>
       <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem;">
-        참가자:<br>
-        <span id="participant-url" style="color:var(--a)"></span>
+        질문 준비가 끝나면 대기 화면으로 전환하세요
       </p>
     </div>
   </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     WAITING/LOBBY PHASE  (QR 대기 화면 — 빔 프로젝터용)
+══════════════════════════════════════════════════════════ -->
+<div id="waiting" class="hidden">
+  <div class="waiting-title">⚖️ 밸런스 게임</div>
+  <div class="waiting-sub">QR 코드를 스캔해서 참여하세요</div>
+
+  <div id="qr-container"></div>
+
+  <div class="waiting-url" id="waiting-url-text"></div>
+
+  <div class="participant-count-display">
+    <strong id="waiting-participant-count">0</strong>
+    명 접속 중
+  </div>
+
+  <nav class="waiting-nav">
+    <button class="btn-secondary" id="btn-waiting-back">◀ 질문 편집으로</button>
+    <button id="btn-waiting-start">🎮 게임 시작</button>
+  </nav>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
@@ -583,6 +645,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
   const socket = io();
+  socket.emit('host:register'); // 호스트로 등록 (participantCount에서 제외)
 
   // ── State ──────────────────────────────────────────────────────────────────
   let state = null;
@@ -590,16 +653,24 @@
   let editingId = null;
 
   // ── DOM refs ───────────────────────────────────────────────────────────────
-  const $lobby       = document.getElementById('lobby');
+  const $setup       = document.getElementById('setup');
+  const $waiting     = document.getElementById('waiting');
   const $gameView    = document.getElementById('game-view');
   const $summaryView = document.getElementById('summary-view');
 
-  // Lobby
-  const $qList       = document.getElementById('question-list');
-  const $readyCount  = document.getElementById('ready-count');
-  const $qCountBadge = document.getElementById('q-count-badge');
-  const $btnStart    = document.getElementById('btn-start');
-  const $btnAddQ     = document.getElementById('btn-add-q');
+  // Setup
+  const $qList             = document.getElementById('question-list');
+  const $readyCount        = document.getElementById('ready-count');
+  const $qCountBadge       = document.getElementById('q-count-badge');
+  const $btnGoWaiting      = document.getElementById('btn-go-waiting');
+  const $btnAddQ           = document.getElementById('btn-add-q');
+
+  // Waiting
+  const $waitingUrlText        = document.getElementById('waiting-url-text');
+  const $waitingParticipantCnt = document.getElementById('waiting-participant-count');
+  const $qrContainer           = document.getElementById('qr-container');
+  const $btnWaitingBack        = document.getElementById('btn-waiting-back');
+  const $btnWaitingStart       = document.getElementById('btn-waiting-start');
 
   // Game view
   const $currNum     = document.getElementById('curr-num');
@@ -648,13 +719,26 @@
     if (state.allVotes) state.allVotes[questionId] = votes;
   });
 
+  socket.on('count:update', ({ participantCount }) => {
+    if (!state) return;
+    state.participantCount = participantCount;
+    if (state.phase === 'lobby') {
+      $waitingParticipantCnt.textContent = participantCount;
+    }
+  });
+
   // ── Render ─────────────────────────────────────────────────────────────────
+  let qrGenerated = false;
+
   function render(s) {
-    show($lobby,       s.phase === 'lobby');
+    if (s.phase !== 'lobby') qrGenerated = false;
+    show($setup,       s.phase === 'setup');
+    show($waiting,     s.phase === 'lobby');
     show($gameView,    s.phase === 'question');
     show($summaryView, s.phase === 'summary');
 
-    if (s.phase === 'lobby')    renderLobby(s);
+    if (s.phase === 'setup')    renderSetup(s);
+    if (s.phase === 'lobby')    renderWaiting(s);
     if (s.phase === 'question') renderQuestion(s);
     if (s.phase === 'summary')  renderSummary(s);
   }
@@ -663,16 +747,44 @@
     el.classList.toggle('hidden', !visible);
   }
 
-  // ── Lobby ──────────────────────────────────────────────────────────────────
-  function renderLobby(s) {
+  // ── Setup ──────────────────────────────────────────────────────────────────
+  function renderSetup(s) {
     const count = s.questions.length;
     $readyCount.textContent = count;
     $qCountBadge.textContent = `${count}개`;
-    $btnStart.disabled = count === 0;
+    $btnGoWaiting.disabled = count === 0;
     renderQList($qList, s.questions);
-    // Show participant URL
-    const url = `${location.protocol}//${location.hostname}:${location.port}/participant.html`;
-    document.getElementById('participant-url').textContent = url;
+  }
+
+  // ── Waiting (QR 대기 화면) ────────────────────────────────────────────────
+  function renderWaiting(s) {
+    const port = location.port ? ':' + location.port : '';
+    const url = `${location.protocol}//${location.hostname}${port}/participant.html`;
+
+    $waitingUrlText.textContent = url;
+    $waitingParticipantCnt.textContent = s.participantCount ?? 0;
+    $btnWaitingStart.disabled = s.questions.length === 0;
+
+    if (!qrGenerated) {
+      $qrContainer.innerHTML = '';
+      if (typeof QRCode === 'undefined') {
+        $qrContainer.textContent = '⚠️ QR 라이브러리 로드 실패 — 네트워크를 확인하세요';
+        return;
+      }
+      try {
+        new QRCode($qrContainer, {
+          text: url,
+          width: 280,
+          height: 280,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H,
+        });
+        qrGenerated = true;
+      } catch (e) {
+        $qrContainer.textContent = '⚠️ QR 생성 실패';
+      }
+    }
   }
 
   function renderQList(container, questions) {
@@ -818,9 +930,13 @@
 
   // ── Event listeners ────────────────────────────────────────────────────────
 
-  // Lobby
+  // Setup
   $btnAddQ.addEventListener('click', openAddModal);
-  $btnStart.addEventListener('click', () => socket.emit('host:next'));
+  $btnGoWaiting.addEventListener('click', () => socket.emit('host:next'));   // setup → lobby
+
+  // Waiting
+  $btnWaitingBack .addEventListener('click', () => socket.emit('host:prev')); // lobby → setup
+  $btnWaitingStart.addEventListener('click', () => socket.emit('host:next')); // lobby → question
 
   // Game nav
   $btnPrev.addEventListener('click', () => socket.emit('host:prev'));
