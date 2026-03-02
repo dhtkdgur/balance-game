@@ -107,6 +107,14 @@ io.on('connection', (socket) => {
     broadcast();
   });
 
+  socket.on('host:reorder', (newOrder) => {
+    if (!Array.isArray(newOrder)) return;
+    const reordered = newOrder.map(id => state.questions.find(q => q.id === id)).filter(Boolean);
+    if (reordered.length !== state.questions.length) return;
+    state.questions = reordered;
+    broadcast();
+  });
+
   socket.on('host:delete', (id) => {
     const idx = state.questions.findIndex(q => q.id === id);
     if (idx === -1) return;
