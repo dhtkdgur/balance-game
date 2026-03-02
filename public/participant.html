@@ -4,24 +4,37 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>밸런스 게임</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* ── Colors ── */
-      --bg:       #582B2B;
-      --bg2:      #3D1A1A;
-      --bg3:      #4A2323;
-      --border:   #7A4040;
-      --text:     #FAECB6;
-      --muted:    #C9A96E;
-      --a:        #F9A822;
-      --a-hover:  #D98E18;
-      --a-dim:    #4A3500;
-      --b:        #E8874A;
-      --b-hover:  #C96E35;
-      --b-dim:    #472010;
-      --accent:   #C87A40;
+      /* ── Core Colors ── */
+      --bg:        #582B2B;
+      --bg2:       #3D1A1A;
+      --bg3:       #4A2323;
+      --border:    #7A4040;
+      --text:      #FAECB6;
+      --muted:     #C9A96E;
+      --a:         #F9A822;
+      --a-hover:   #D98E18;
+      --a-dim:     #4A3500;
+      --b:         #E8874A;
+      --b-hover:   #C96E35;
+      --b-dim:     #472010;
+      --accent:    #C87A40;
+      /* ── Gradients ── */
+      --grad-a:    linear-gradient(160deg, #FFBE3A 0%, #F9A822 50%, #E8874A 100%);
+      --grad-b:    linear-gradient(160deg, #F4A468 0%, #E8874A 50%, #C96E35 100%);
+      --grad-gold: linear-gradient(135deg, #FAECB6 0%, #F9A822 60%, #C9A96E 100%);
+      /* ── Glow ── */
+      --glow-a:    rgba(249, 168, 34, 0.4);
+      --glow-b:    rgba(232, 135, 74, 0.4);
+      /* ── Fonts ── */
+      --font-display: 'Black Han Sans', 'Malgun Gothic', sans-serif;
+      --font-body:    'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
       /* ── Radius ── */
       --radius-sm:   8px;
       --radius-md:   12px;
@@ -36,18 +49,29 @@
 
     html, body { height: 100%; }
     body {
-      background: var(--bg);
+      background: #582B2B;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 25% 20%, rgba(249,168,34,.07) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 60% at 75% 85%, rgba(232,135,74,.06) 0%, transparent 55%);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+      font-family: var(--font-body);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       overflow: hidden;
     }
 
+    /* Subtle dot grid pattern */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(250,236,182,.022) 1px, transparent 0);
+      background-size: 28px 28px;
+      pointer-events: none; z-index: 0;
+    }
+
     #app {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
+      height: 100%; display: flex; flex-direction: column;
+      position: relative; z-index: 1;
     }
 
     .hidden { display: none !important; }
@@ -61,32 +85,43 @@
       :focus-visible { outline: 3px solid ButtonText; box-shadow: none; }
     }
 
-    /* ════════════════════════════════════════════════════════════
+    /* ── Phase transition ── */
+    @keyframes phase-enter {
+      from { opacity: 0; transform: translateY(22px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .phase-enter { animation: phase-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+    /* ══════════════════════════════════════════════════
        LOBBY SCREEN
-    ════════════════════════════════════════════════════════════ */
+    ══════════════════════════════════════════════════ */
     #screen-lobby {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2rem;
-      padding: 2rem;
-      text-align: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1.8rem; padding: 2rem; text-align: center;
     }
 
     .lobby-icon {
-      font-size: 5rem;
-      animation: pulse 2s ease-in-out infinite;
+      font-size: 5.5rem;
+      animation: float-pulse 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(249,168,34,.3));
     }
 
-    @keyframes pulse {
-      0%, 100% { transform: scale(1);    opacity: 1; }
-      50%       { transform: scale(1.08); opacity: .85; }
+    @keyframes float-pulse {
+      0%, 100% { transform: translateY(0) scale(1);    opacity: 1; }
+      50%       { transform: translateY(-14px) scale(1.06); opacity: .88; }
     }
 
-    .lobby-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; }
-    .lobby-sub   { font-size: 1.1rem; color: var(--muted); }
+    .lobby-title {
+      font-family: var(--font-display);
+      font-size: 2.4rem; letter-spacing: .05em;
+      background: var(--grad-gold);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 24px rgba(249,168,34,.2));
+    }
+    .lobby-sub   { font-size: 1.05rem; color: var(--muted); line-height: 1.6; }
 
     .waiting-dots::after {
       content: '';
@@ -99,268 +134,300 @@
       75%  { content: '...'; }
     }
 
-    /* ════════════════════════════════════════════════════════════
+    /* ══════════════════════════════════════════════════
        QUESTION SCREEN
-    ════════════════════════════════════════════════════════════ */
+    ══════════════════════════════════════════════════ */
     #screen-question {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
 
     .q-header {
-      background: var(--bg2);
+      background: linear-gradient(to bottom, rgba(25,8,8,.92), rgba(61,26,26,.8));
       border-bottom: 1px solid var(--border);
-      padding: .7rem 1.2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: .6rem;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      padding: .75rem 1.2rem;
+      display: flex; align-items: center; justify-content: center; gap: .7rem;
     }
     .q-progress {
-      font-size: .9rem;
-      color: var(--muted);
-      font-weight: 600;
+      font-size: .88rem; color: var(--muted); font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
     .progress-dot {
-      width: 8px; height: 8px;
+      width: 9px; height: 9px;
       border-radius: 50%;
-      background: var(--bg3);
-      border: 1px solid var(--border);
+      background: var(--bg3); border: 1px solid var(--border);
       display: inline-block;
-      transition: background .3s, transform 150ms cubic-bezier(.34,1.56,.64,1);
+      transition: background .3s, transform 200ms cubic-bezier(.34,1.56,.64,1), box-shadow 200ms;
     }
-    .progress-dot.active { background: var(--a); transform: scale(1.3); }
-    .progress-dot.done   { background: var(--accent); }
+    .progress-dot.active {
+      background: var(--a); transform: scale(1.35);
+      box-shadow: 0 0 8px var(--glow-a);
+    }
+    .progress-dot.done { background: var(--accent); }
 
     .q-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
 
     /* Question text banner */
     .q-text-area {
-      padding: 1.2rem 1.4rem;
-      background: var(--bg2);
-      border-bottom: 2px solid var(--border);
+      padding: 1.3rem 1.5rem;
+      background: linear-gradient(to bottom, rgba(30,10,10,.9), rgba(61,26,26,.7));
+      border-bottom: 2px solid rgba(122,64,64,.5);
       text-align: center;
+      backdrop-filter: blur(4px);
     }
     .q-text {
-      font-size: clamp(1.1rem, 4vw, 1.5rem);
-      font-weight: 700;
-      line-height: 1.4;
-      letter-spacing: -0.01em;
+      font-family: var(--font-display);
+      font-size: clamp(1.15rem, 4.5vw, 1.6rem);
+      line-height: 1.4; letter-spacing: .01em;
       word-break: keep-all;
     }
 
-    /* Vote buttons area */
+    /* ── Vote buttons ── */
     .vote-area {
       flex: 1;
       display: grid;
       grid-template-rows: 1fr 1fr;
-      gap: 0;
+      gap: 3px;
+      position: relative;
     }
 
     .vote-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: .5rem;
-      cursor: pointer;
-      border: none;
-      font-family: inherit;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: .6rem;
+      cursor: pointer; border: none;
+      font-family: var(--font-body);
       transition: filter 150ms, transform 80ms cubic-bezier(0,0,.2,1);
-      position: relative;
-      overflow: hidden;
+      position: relative; overflow: hidden;
       -webkit-tap-highlight-color: transparent;
     }
+    .vote-btn:active:not(:disabled) { transform: scale(.97); filter: brightness(1.06); }
+    .vote-btn:disabled { opacity: .55; }
 
-    .vote-btn:active:not(:disabled) {
-      transform: scale(.97);
+    .vote-btn.btn-a { background: var(--grad-a); }
+    .vote-btn.btn-b { background: var(--grad-b); }
+
+    /* Shine overlay */
+    .vote-btn::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 45%;
+      background: linear-gradient(to bottom, rgba(255,255,255,.12), transparent);
+      pointer-events: none;
     }
 
-    .vote-btn.btn-a {
-      background: var(--a);
-      border-bottom: 2px solid var(--border);
+    /* Ripple on tap */
+    .vote-btn::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      width: 200px; height: 200px;
+      margin-left: -100px; margin-top: -100px;
+      background: rgba(255,255,255,.22);
+      transform: scale(0);
+      opacity: 0;
+      pointer-events: none;
+      left: var(--ripple-x, 50%);
+      top: var(--ripple-y, 50%);
     }
-    .vote-btn.btn-b {
-      background: var(--b);
+    .vote-btn.rippling::after {
+      animation: ripple-out .55s cubic-bezier(0, 0, .2, 1) forwards;
     }
-
-    .vote-btn:hover:not(:disabled) { filter: brightness(1.08); }
+    @keyframes ripple-out {
+      0%   { transform: scale(0); opacity: 1; }
+      100% { transform: scale(4); opacity: 0; }
+    }
 
     .vote-badge {
-      font-size: clamp(2.5rem, 12vw, 4.5rem);
-      font-weight: 900;
-      color: rgba(255,255,255,.3);
+      font-family: var(--font-display);
+      font-size: clamp(3rem, 14vw, 5.5rem);
+      color: rgba(255,255,255,.22);
       line-height: 1;
+      letter-spacing: .02em;
     }
     .vote-opt-text {
-      font-size: clamp(1.3rem, 5vw, 2.2rem);
-      font-weight: 700;
-      color: #fff;
+      font-size: clamp(1.4rem, 5.5vw, 2.4rem);
+      font-weight: 700; color: #fff;
       text-align: center;
       padding: 0 1.5rem;
-      word-break: keep-all;
-      line-height: 1.3;
+      word-break: keep-all; line-height: 1.3;
+      text-shadow: 0 2px 8px rgba(0,0,0,.35);
     }
 
-    /* ── Already voted state ─────────────────────────────────── */
+    /* VS badge */
+    .vs-center-badge {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10; pointer-events: none;
+      font-family: var(--font-display);
+      font-size: 1.1rem; letter-spacing: .12em;
+      color: var(--text);
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      width: 58px; height: 58px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 4px rgba(88,43,43,.8), var(--shadow-md);
+      animation: vs-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes vs-pulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(88,43,43,.8), var(--shadow-md); }
+      50%       { box-shadow: 0 0 0 6px rgba(88,43,43,.6), 0 0 20px rgba(249,168,34,.15), var(--shadow-md); }
+    }
+
+    /* ── Particle burst ── */
+    @keyframes particle-burst {
+      0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+    }
+    .vote-particle {
+      position: fixed;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      pointer-events: none; z-index: 999;
+      animation: particle-burst .7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* ── Already voted state ── */
     .result-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 1rem 1.2rem;
-      gap: .9rem;
-      overflow-y: auto;
+      flex: 1; display: flex; flex-direction: column;
+      padding: 1.1rem 1.2rem; gap: 1rem; overflow-y: auto;
     }
 
     .voted-notice {
-      background: var(--bg2);
-      border: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(74,53,0,.5), rgba(71,32,16,.4));
+      border: 1px solid rgba(249,168,34,.28);
       border-radius: var(--radius-md);
-      padding: .8rem 1rem;
-      text-align: center;
-      font-size: .9rem;
-      color: var(--muted);
+      padding: .9rem 1.1rem; text-align: center;
+      font-size: .92rem; color: var(--muted);
       box-shadow: var(--shadow-sm);
     }
-    .voted-notice strong { color: var(--text); }
+    .voted-notice strong { color: var(--text); font-weight: 700; }
 
-    .result-row {
-      display: flex;
-      flex-direction: column;
-      gap: .4rem;
-    }
-    .result-header {
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-    }
+    .result-row { display: flex; flex-direction: column; gap: .45rem; }
+    .result-header { display: flex; align-items: center; gap: .65rem; }
+
     .r-badge {
-      width: 36px; height: 36px;
+      width: 38px; height: 38px;
       border-radius: var(--radius-sm);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; font-weight: 800;
-      flex-shrink: 0;
+      font-family: var(--font-display); font-size: 1.1rem;
+      flex-shrink: 0; box-shadow: var(--shadow-sm);
     }
-    .r-badge.a { background: var(--a-dim); color: var(--a); }
-    .r-badge.b { background: var(--b-dim); color: var(--b); }
-    .r-text {
-      flex: 1;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-    .r-pct {
-      font-size: 1.2rem;
-      font-weight: 800;
-    }
+    .r-badge.a { background: linear-gradient(145deg, #6B4A00, var(--a-dim)); color: var(--a); }
+    .r-badge.b { background: linear-gradient(145deg, #5C2A00, var(--b-dim)); color: var(--b); }
+
+    .r-text { flex: 1; font-size: 1rem; font-weight: 600; }
+    .r-pct  { font-family: var(--font-display); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
     .r-pct.a { color: var(--a); }
     .r-pct.b { color: var(--b); }
 
     .r-bar-track {
-      height: 16px;
-      background: var(--bg3);
-      border-radius: var(--radius-sm);
-      overflow: hidden;
+      height: 22px;
+      background: rgba(0,0,0,.35);
+      border-radius: var(--radius-sm); overflow: hidden;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,.4);
     }
     .r-bar-fill {
-      height: 100%;
-      border-radius: var(--radius-sm);
-      transition: width .5s cubic-bezier(.4,0,.2,1);
+      height: 100%; border-radius: var(--radius-sm);
+      transition: width .7s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
     }
-    .r-bar-fill.a { background: var(--a); }
-    .r-bar-fill.b { background: var(--b); }
+    .r-bar-fill::after {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(to bottom, rgba(255,255,255,.18), transparent);
+    }
+    .r-bar-fill.a { background: linear-gradient(90deg, var(--a), #E8874A); }
+    .r-bar-fill.b { background: linear-gradient(90deg, var(--b), #C96E35); }
 
-    /* Chosen indicator */
     .chosen-mark {
       display: inline-block;
-      background: var(--accent);
-      color: #fff;
-      font-size: .7rem;
-      font-weight: 700;
+      background: var(--accent); color: #fff;
+      font-size: .68rem; font-weight: 700;
       padding: .15rem .5rem;
       border-radius: var(--radius-pill);
-      margin-left: .5rem;
-      vertical-align: middle;
+      margin-left: .45rem; vertical-align: middle;
     }
 
     .r-total { font-size: .8rem; color: var(--muted); text-align: center; }
 
-    /* Waiting for next */
     .waiting-next {
-      text-align: center;
-      font-size: .85rem;
-      color: var(--muted);
-      padding: .5rem;
-      animation: blink 1.5s ease-in-out infinite;
+      text-align: center; font-size: .85rem; color: var(--muted);
+      padding: .4rem;
+      animation: blink 1.6s ease-in-out infinite;
     }
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50%       { opacity: .4; }
+      50%       { opacity: .35; }
     }
 
-    /* ════════════════════════════════════════════════════════════
+    /* ══════════════════════════════════════════════════
        SUMMARY SCREEN
-    ════════════════════════════════════════════════════════════ */
+    ══════════════════════════════════════════════════ */
     #screen-summary {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
     }
 
     .summary-header-p {
-      background: var(--bg2);
+      background: linear-gradient(to bottom, rgba(25,8,8,.92), rgba(61,26,26,.8));
       border-bottom: 1px solid var(--border);
-      padding: 1rem 1.2rem;
-      text-align: center;
+      padding: 1rem 1.2rem; text-align: center;
     }
-    .summary-header-p h2 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.01em; }
+    .summary-header-p h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem; letter-spacing: .04em;
+      background: var(--grad-gold);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
 
     .summary-scroll {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: .9rem;
+      flex: 1; overflow-y: auto;
+      padding: .9rem; display: flex; flex-direction: column; gap: .8rem;
     }
 
+    @keyframes card-slide-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
     .summary-card-p {
-      background: var(--bg2);
+      background: rgba(61,26,26,.75);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 1rem 1.2rem;
+      padding: 1rem 1.15rem;
       box-shadow: var(--shadow-sm);
+      animation: card-slide-up .45s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
-    .sc-num { font-size: .75rem; color: var(--muted); margin-bottom: .3rem; }
-    .sc-text { font-size: .95rem; font-weight: 700; margin-bottom: .8rem; word-break: keep-all; }
-    .sc-total { font-size: .75rem; color: var(--muted); margin-top: .4rem; }
+    .sc-num { font-size: .72rem; color: var(--muted); margin-bottom: .28rem; text-transform: uppercase; letter-spacing: .08em; }
+    .sc-text { font-size: .95rem; font-weight: 700; margin-bottom: .75rem; word-break: keep-all; line-height: 1.4; }
+    .sc-total { font-size: .72rem; color: var(--muted); margin-top: .38rem; text-align: right; }
+
     .split-bar {
-      display: flex;
-      height: 36px; /* 모바일 참가자 화면 (compact) */
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      background: var(--bg3);
-      margin-bottom: .4rem;
+      display: flex; height: 38px;
+      border-radius: var(--radius-sm); overflow: hidden;
+      background: rgba(0,0,0,.32); margin-bottom: .4rem;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,.4);
     }
-    .split-seg   { transition: width .5s cubic-bezier(.4,0,.2,1); flex-shrink: 0; }
-    .split-seg.a { background: var(--a); }
-    .split-seg.b { background: var(--b); }
-    .split-meta  { display: flex; justify-content: space-between; margin-bottom: .3rem; font-size: .85rem; font-weight: 700; }
-    .split-pct-a { color: var(--a); }
-    .split-pct-b { color: var(--b); }
-    .split-opts  { display: flex; justify-content: space-between; font-size: .78rem; }
-    .split-opt-a { color: var(--a); opacity: .9; }
-    .split-opt-b { color: var(--b); opacity: .9; }
+    .split-seg { transition: width .65s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0; position: relative; }
+    .split-seg::after {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 45%;
+      background: linear-gradient(to bottom, rgba(255,255,255,.14), transparent);
+    }
+    .split-seg.a { background: linear-gradient(90deg, var(--a), #E8874A); }
+    .split-seg.b { background: linear-gradient(90deg, var(--b), #C96E35); }
+    .split-meta  { display: flex; justify-content: space-between; margin-bottom: .28rem; font-size: .85rem; font-weight: 800; }
+    .split-pct-a { color: var(--a); font-variant-numeric: tabular-nums; }
+    .split-pct-b { color: var(--b); font-variant-numeric: tabular-nums; }
+    .split-opts  { display: flex; justify-content: space-between; font-size: .76rem; gap: .6rem; }
+    .split-opt-a { color: var(--a); opacity: .9; flex: 1; }
+    .split-opt-b { color: var(--b); opacity: .9; flex: 1; text-align: right; }
     .sc-my {
       display: inline-block;
-      font-size: .7rem; font-weight: 700;
+      font-size: .68rem; font-weight: 700;
       background: var(--accent); color: #fff;
       padding: .1rem .4rem; border-radius: var(--radius-pill);
       margin-left: .3rem; vertical-align: middle;
@@ -372,24 +439,25 @@
         animation-iteration-count: 1 !important;
         transition-duration: .01ms !important;
       }
+      body::before { display: none; }
     }
   </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════════
        LOBBY
-  ══════════════════════════════════════════════════════════ -->
+  ══════════════════════════════════════════════════ -->
   <div id="screen-lobby">
     <div class="lobby-icon">⚖️</div>
     <div class="lobby-title">밸런스 게임</div>
     <div class="lobby-sub" aria-label="진행자가 게임을 시작할 때까지 기다려주세요">진행자가 게임을 시작할 때까지 기다려주세요<span class="waiting-dots" aria-hidden="true"></span></div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════════
        QUESTION
-  ══════════════════════════════════════════════════════════ -->
+  ══════════════════════════════════════════════════ -->
   <div id="screen-question" class="hidden">
     <div class="q-header">
       <span class="q-progress" id="q-progress-text">질문 1 / 5</span>
@@ -405,11 +473,14 @@
       <!-- Vote buttons (shown when not voted) -->
       <div class="vote-area" id="vote-area">
         <button class="vote-btn btn-a" id="btn-vote-a">
-          <span class="vote-badge">A</span>
+          <span class="vote-badge" aria-hidden="true">A</span>
           <span class="vote-opt-text" id="btn-a-text"></span>
         </button>
+
+        <div class="vs-center-badge" aria-hidden="true">VS</div>
+
         <button class="vote-btn btn-b" id="btn-vote-b">
-          <span class="vote-badge">B</span>
+          <span class="vote-badge" aria-hidden="true">B</span>
           <span class="vote-opt-text" id="btn-b-text"></span>
         </button>
       </div>
@@ -448,9 +519,9 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════════
        SUMMARY
-  ══════════════════════════════════════════════════════════ -->
+  ══════════════════════════════════════════════════ -->
   <div id="screen-summary" class="hidden">
     <div class="summary-header-p">
       <h2>📊 최종 결과</h2>
@@ -466,7 +537,7 @@
 
   // ── State ──────────────────────────────────────────────────────────────────
   let currentState = null;
-  let myVotes = {};   // { questionId: 'A' | 'B' }
+  let myVotes = {};
   let prevPhase = null;
 
   // Restore votes from localStorage
@@ -478,6 +549,9 @@
   function saveMyVotes() {
     try { localStorage.setItem('balgame-votes', JSON.stringify(myVotes)); } catch {}
   }
+
+  // ── Motion preference ──────────────────────────────────────────────────────
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ── DOM refs ───────────────────────────────────────────────────────────────
   const $lobby   = document.getElementById('screen-lobby');
@@ -505,6 +579,53 @@
   const $rTotal      = document.getElementById('r-total');
   const $summaryList = document.getElementById('summary-list');
 
+  // ── Particle burst on vote ─────────────────────────────────────────────────
+  function spawnParticles(x, y, color) {
+    if (reducedMotion) return;
+    const COUNT = 14;
+    for (let i = 0; i < COUNT; i++) {
+      const angle = (i / COUNT) * Math.PI * 2 + Math.random() * 0.4;
+      const dist  = 55 + Math.random() * 75;
+      const px    = Math.cos(angle) * dist;
+      const py    = Math.sin(angle) * dist;
+      const size  = 6 + Math.random() * 6;
+      const p     = document.createElement('div');
+      p.className = 'vote-particle';
+      p.style.cssText = `
+        left:${x}px; top:${y}px;
+        width:${size}px; height:${size}px;
+        background:${color};
+        --px:${px}px; --py:${py}px;
+        animation-duration:${0.55 + Math.random() * 0.3}s;
+      `;
+      document.body.appendChild(p);
+      p.addEventListener('animationend', () => p.remove(), { once: true });
+    }
+  }
+
+  // ── Ripple effect ──────────────────────────────────────────────────────────
+  function triggerRipple(btn, e) {
+    if (reducedMotion) return;
+    const rect = btn.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width * 100) + '%';
+    const y = ((e.clientY - rect.top) / rect.height * 100) + '%';
+    btn.style.setProperty('--ripple-x', x);
+    btn.style.setProperty('--ripple-y', y);
+    btn.classList.remove('rippling');
+    void btn.offsetWidth;
+    btn.classList.add('rippling');
+    btn.addEventListener('animationend', () => btn.classList.remove('rippling'), { once: true });
+  }
+
+  // ── Phase-enter animation helper ───────────────────────────────────────────
+  function addPhaseEnter(el) {
+    if (reducedMotion) return;
+    el.classList.remove('phase-enter');
+    void el.offsetWidth;
+    el.classList.add('phase-enter');
+    el.addEventListener('animationend', () => el.classList.remove('phase-enter'), { once: true });
+  }
+
   // ── Socket events ──────────────────────────────────────────────────────────
   socket.on('game:state', (state) => {
     currentState = state;
@@ -516,7 +637,6 @@
     const cur = currentState.currentQuestion;
     if (cur && cur.id === questionId) {
       currentState.currentVotes = votes;
-      // Update result bars if showing
       if (!$resultArea.classList.contains('hidden')) {
         updateResultBars(votes);
       }
@@ -546,9 +666,17 @@
     prevPhase = state.phase;
 
     const isWaiting = state.phase === 'setup' || state.phase === 'lobby';
-    show($lobby,   isWaiting);
-    show($qScreen, state.phase === 'question');
-    show($summary, state.phase === 'summary');
+
+    const views = [
+      { el: $lobby,   active: isWaiting },
+      { el: $qScreen, active: state.phase === 'question' },
+      { el: $summary, active: state.phase === 'summary' },
+    ];
+    views.forEach(({ el, active }) => {
+      const wasHidden = el.classList.contains('hidden');
+      show(el, active);
+      if (active && wasHidden) addPhaseEnter(el);
+    });
 
     // 단계별 대기 메시지 차별화
     if (isWaiting) {
@@ -583,15 +711,14 @@
       $progressDots.appendChild(dot);
     });
 
-    $qText.textContent = q.text;
+    $qText.textContent    = q.text;
     $btnAText.textContent = q.optionA;
     $btnBText.textContent = q.optionB;
 
     const myChoice = myVotes[q.id];
 
     if (myChoice) {
-      // Already voted — show results
-      show($voteArea, false);
+      show($voteArea,  false);
       show($resultArea, true);
 
       $rTextA.innerHTML = esc(q.optionA) + (myChoice === 'A' ? '<span class="chosen-mark">내 선택</span>' : '');
@@ -600,8 +727,7 @@
 
       updateResultBars(state.currentVotes || { A: 0, B: 0 });
     } else {
-      // Not voted — show vote buttons
-      show($voteArea, true);
+      show($voteArea,   true);
       show($resultArea, false);
     }
   }
@@ -623,16 +749,19 @@
   function renderSummary(state) {
     $summaryList.innerHTML = '';
     state.questions.forEach((q, i) => {
-      const votes = (state.allVotes || {})[q.id] || { A: 0, B: 0 };
-      const a = votes.A || 0;
-      const b = votes.B || 0;
-      const total = a + b;
-      const pctA = total ? Math.round(a / total * 100) : 0;
-      const pctB = total ? 100 - pctA : 0;
+      const votes    = (state.allVotes || {})[q.id] || { A: 0, B: 0 };
+      const a        = votes.A || 0;
+      const b        = votes.B || 0;
+      const total    = a + b;
+      const pctA     = total ? Math.round(a / total * 100) : 0;
+      const pctB     = total ? 100 - pctA : 0;
       const myChoice = myVotes[q.id];
+      const crownA   = pctA > 55 ? ' 👑' : '';
+      const crownB   = pctB > 55 ? '👑 ' : '';
 
       const card = document.createElement('div');
       card.className = 'summary-card-p';
+      card.style.animationDelay = (i * 0.06) + 's';
       card.innerHTML = `
         <div class="sc-num">질문 ${i + 1}</div>
         <div class="sc-text">${esc(q.text)}</div>
@@ -641,8 +770,8 @@
           <div class="split-seg b" style="width:${pctB}%"></div>
         </div>
         <div class="split-meta">
-          <span class="split-pct-a">A &nbsp;${pctA}%</span>
-          <span class="split-pct-b">${pctB}% &nbsp;B</span>
+          <span class="split-pct-a">A &nbsp;${pctA}%${crownA}</span>
+          <span class="split-pct-b">${crownB}${pctB}% &nbsp;B</span>
         </div>
         <div class="split-opts">
           <span class="split-opt-a">A. ${esc(q.optionA)}${myChoice === 'A' ? '<span class="sc-my">내 선택</span>' : ''}</span>
@@ -659,7 +788,7 @@
     if (!currentState) return;
     const q = currentState.currentQuestion;
     if (!q) return;
-    if (myVotes[q.id]) return;  // already voted
+    if (myVotes[q.id]) return;
 
     myVotes[q.id] = choice;
     saveMyVotes();
@@ -670,8 +799,16 @@
     renderQuestion(currentState);
   }
 
-  $btnVoteA.addEventListener('click', () => vote('A'));
-  $btnVoteB.addEventListener('click', () => vote('B'));
+  $btnVoteA.addEventListener('click', (e) => {
+    triggerRipple($btnVoteA, e);
+    spawnParticles(e.clientX, e.clientY, '#F9A822');
+    vote('A');
+  });
+  $btnVoteB.addEventListener('click', (e) => {
+    triggerRipple($btnVoteB, e);
+    spawnParticles(e.clientX, e.clientY, '#E8874A');
+    vote('B');
+  });
 
   // ── Util ───────────────────────────────────────────────────────────────────
   function esc(str) {
