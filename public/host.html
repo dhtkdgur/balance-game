@@ -37,7 +37,7 @@
       --glow-acc:  rgba(200, 122, 64, 0.4);
       /* ── Fonts ── */
       --font-display: 'Black Han Sans', 'Malgun Gothic', sans-serif;
-      --font-body:    'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+      --font-body:    'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Malgun Gothic', sans-serif;
       /* ── Radius ── */
       --radius-sm:   8px;
       --radius-md:   12px;
@@ -70,7 +70,7 @@
       position: fixed; inset: 0;
       z-index: 0; pointer-events: none;
     }
-    body > *:not(#particle-canvas):not(#confetti-canvas) {
+    body > *:not(#particle-canvas):not(#confetti-canvas):not(.modal-overlay) {
       position: relative; z-index: 1;
     }
 
@@ -118,6 +118,12 @@
     }
     @media (forced-colors: active) {
       :focus-visible { outline: 3px solid ButtonText; box-shadow: none; }
+    }
+
+    /* ── Emoji color fix ── */
+    .emoji-plain {
+      -webkit-text-fill-color: initial;
+      background: none;
     }
 
     /* ── Modals ── */
@@ -181,8 +187,8 @@
       margin-bottom: 2rem;
     }
     .lobby-header h1 {
-      font-family: var(--font-display);
-      font-size: 2.2rem; letter-spacing: .04em;
+      font-family: var(--font-body);
+      font-size: 2.2rem; letter-spacing: .04em; font-weight: 600;
       background: var(--grad-gold);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -302,8 +308,8 @@
       text-align: center;
     }
     .waiting-title {
-      font-family: var(--font-display);
-      font-size: clamp(2.5rem, 5vw, 4.2rem); letter-spacing: .05em;
+      font-family: var(--font-body);
+      font-size: clamp(2.5rem, 5vw, 4.2rem); letter-spacing: .05em; font-weight: 600;
       background: var(--grad-gold);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -386,8 +392,8 @@
       display: flex; align-items: center; gap: 1.2rem;
     }
     .game-header h1 {
-      font-family: var(--font-display);
-      font-size: 1.25rem; margin-right: auto; letter-spacing: .04em;
+      font-family: var(--font-body);
+      font-size: 1.25rem; margin-right: auto; letter-spacing: .04em; font-weight: 600;
       background: var(--grad-gold);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -570,8 +576,8 @@
       margin-bottom: 2rem;
     }
     .summary-header h1 {
-      font-family: var(--font-display);
-      font-size: 2.2rem; letter-spacing: .04em;
+      font-family: var(--font-body);
+      font-size: 2.2rem; letter-spacing: .04em; font-weight: 600;
       background: var(--grad-gold);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -673,7 +679,7 @@
 ══════════════════════════════════════════════════ -->
 <div id="setup">
   <div class="lobby-header">
-    <h1>⚖ 밸런스 게임</h1>
+    <h1><span class="emoji-plain">⚖</span> 밸런스 게임</h1>
     <span class="subtitle">진행자 — 질문 설정</span>
   </div>
 
@@ -704,7 +710,7 @@
      WAITING / LOBBY PHASE
 ══════════════════════════════════════════════════ -->
 <div id="waiting" class="hidden">
-  <div class="waiting-title">⚖ 밸런스 게임</div>
+  <div class="waiting-title"><span class="emoji-plain">⚖</span> 밸런스 게임</div>
   <div class="waiting-sub">QR 코드를 스캔해서 참여하세요</div>
 
   <div id="qr-container"></div>
@@ -728,7 +734,7 @@
 ══════════════════════════════════════════════════ -->
 <div id="game-view" class="hidden">
   <header class="game-header">
-    <h1>⚖ 밸런스 게임</h1>
+    <h1><span class="emoji-plain">⚖</span> 밸런스 게임</h1>
     <div class="progress-badge">
       <span class="progress-badge-text">질문 <span id="curr-num">1</span> / <span id="total-num">5</span></span>
       <div class="progress-bar-track">
@@ -794,7 +800,7 @@
 ══════════════════════════════════════════════════ -->
 <div id="summary-view" class="hidden">
   <div class="summary-header">
-    <h1>📊 최종 결과</h1>
+    <h1><span class="emoji-plain">📊</span> 최종 결과</h1>
     <button class="btn-secondary" id="btn-back-to-lobby">↩ 처음으로</button>
   </div>
   <div class="summary-grid" id="summary-grid"></div>
