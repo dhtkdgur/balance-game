@@ -254,6 +254,16 @@
     .btn-del  { background: transparent; color: var(--red); border: 1px solid rgba(232,84,84,.35); }
     .btn-del:hover { background: rgba(232,84,84,.1); border-color: var(--red); }
 
+    .q-drag-handle {
+      cursor: grab; color: var(--muted); font-size: 1.1rem;
+      padding: 0 .2rem; user-select: none; flex-shrink: 0;
+      opacity: .5; transition: opacity 150ms;
+      align-self: center;
+    }
+    .q-item:hover .q-drag-handle { opacity: 1; }
+    .q-item--dragging { opacity: .35; background: rgba(249,168,34,.06); }
+    .q-item--over    { border-top: 2px solid var(--a); }
+
     .q-add-btn {
       margin: .8rem 1.4rem;
       background: transparent;
@@ -501,13 +511,14 @@
       position: absolute; inset: 0;
       display: flex; align-items: center;
       padding: 0 1.2rem;
-      font-size: 1.2rem; font-weight: 700; color: #fff;
+      font-size: 1.2rem; font-weight: 500; color: #fff;
       text-shadow: 0 1px 6px rgba(0,0,0,.85), 0 0 20px rgba(0,0,0,.6);
       pointer-events: none;
     }
     .bar-opt-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .bar-pct {
-      font-family: var(--font-display);
+      font-family: var(--font-body);
+      font-weight: 500;
       font-size: 1.9rem;
       font-variant-numeric: tabular-nums;
     }
@@ -611,9 +622,10 @@
       text-transform: uppercase; letter-spacing: .1em;
     }
     .summary-card .s-text {
-      font-family: var(--font-display);
+      font-family: var(--font-body);
+      font-weight: 500;
       font-size: 1.1rem; margin-bottom: 1rem;
-      word-break: keep-all; line-height: 1.4; letter-spacing: .01em;
+      word-break: keep-all; line-height: 1.4;
     }
     .s-total { font-size: .78rem; color: var(--muted); margin-top: .55rem; text-align: right; }
 
@@ -1121,10 +1133,15 @@
 
   function renderQList(container, questions) {
     container.innerHTML = '';
+    let dragSrc = null;
+
     questions.forEach((q, i) => {
       const li = document.createElement('li');
       li.className = 'q-item';
+      li.draggable = true;
+      li.dataset.id = q.id;
       li.innerHTML = `
+        <span class="q-drag-handle" title="드래그하여 순서 변경">⠿</span>
         <div class="q-num">${i + 1}</div>
         <div class="q-info">
           <div class="q-text">${esc(q.text)}</div>
@@ -1141,6 +1158,42 @@
       `;
       li.querySelector('.btn-edit').addEventListener('click', () => openEditModal(q));
       li.querySelector('.btn-del').addEventListener('click',  () => socket.emit('host:delete', q.id));
+
+      li.addEventListener('dragstart', (e) => {
+        dragSrc = li;
+        li.classList.add('q-item--dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      li.addEventListener('dragend', () => {
+        dragSrc = null;
+        container.querySelectorAll('.q-item').forEach(el => {
+          el.classList.remove('q-item--dragging', 'q-item--over');
+        });
+      });
+      li.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (li !== dragSrc) {
+          container.querySelectorAll('.q-item').forEach(el => el.classList.remove('q-item--over'));
+          li.classList.add('q-item--over');
+        }
+      });
+      li.addEventListener('dragleave', () => li.classList.remove('q-item--over'));
+      li.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!dragSrc || dragSrc === li) return;
+        const items = [...container.querySelectorAll('.q-item')];
+        const srcIdx  = items.indexOf(dragSrc);
+        const destIdx = items.indexOf(li);
+        if (srcIdx < destIdx) {
+          li.after(dragSrc);
+        } else {
+          li.before(dragSrc);
+        }
+        const newOrder = [...container.querySelectorAll('.q-item')].map(el => Number(el.dataset.id));
+        socket.emit('host:reorder', newOrder);
+      });
+
       container.appendChild(li);
     });
   }
